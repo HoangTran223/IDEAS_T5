@@ -547,7 +547,8 @@ def main():
         args.fp32 = not ds_config["bf16"]["enabled"]
     log_rank(args)
 
-    args.deepspeed_config = None
+    # Add
+    # args.deepspeed_config = None
     
     # prepare for deepspeed ZeRO-3
     if ds_config is not None and ds_config["zero_optimization"]["stage"] == 3:
