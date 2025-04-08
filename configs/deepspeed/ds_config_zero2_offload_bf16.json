@@ -16,7 +16,7 @@
     "zero_force_ds_cpu_optimizer": false,
     "zero_allow_untested_optimizer": true,
     "fp16": {
-        "enabled": false
+        "enabled": true
     },
     "bf16": {
         "enabled": true,
