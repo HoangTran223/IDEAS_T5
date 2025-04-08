@@ -584,13 +584,22 @@ def main():
     optimizer = distiller.add_optimizer_param_group(optimizer)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
 
+    # model, optimizer, _, lr_scheduler = deepspeed.initialize(
+    #     model=distiller,
+    #     optimizer=optimizer,
+    #     args=args,
+    #     lr_scheduler=lr_scheduler,
+    #     mpu=None,
+    #     config_params=ds_config,
+    # )
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=distiller,
         optimizer=optimizer,
         args=args,
         lr_scheduler=lr_scheduler,
         mpu=None,
-        config_params=ds_config
+        config_params=ds_config,
+        dtype=torch.float16
     )
     
     if args.do_train:
