@@ -556,6 +556,10 @@ def main():
     
     log_rank("Initializing a distiller for knowledge distillation...")
     distiller = Distiller(args, device)
+    ## Add
+    distiller = distiller.half()
+
+
     dataset = prepare_dataset(args, distiller)
     
     dp_world_size = dist.get_world_size()
