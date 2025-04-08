@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 # BASE_PATH=path_to_dskd_project
-BASE_PATH=/kaggle/working
+BASE_PATH=/kaggle/working/IDEAS_T5/code
 CKPT_TYPE="qwen"
 CKPT_NAME="Qwen1.5-1.8B"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_TYPE}/${CKPT_NAME}"
