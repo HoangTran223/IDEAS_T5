@@ -16,7 +16,10 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 # BASE_PATH=path_to_dskd_project
+
+# Add
 BASE_PATH=/kaggle/working/IDEAS_T5
+
 CKPT_TYPE="qwen"
 CKPT_NAME="Qwen1.5-1.8B"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_TYPE}/${CKPT_NAME}"
@@ -33,8 +36,7 @@ EPOCH=10
 # length
 MAX_LENGTH=64
 # runtime
-# PRECISION="fp16"
-# PRECISION="bf16"
+PRECISION="fp16"
 CRITERION="cross_entropy"
 CONFIG="default-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
@@ -85,8 +87,7 @@ OPTS+=" --criterion ${CRITERION}"
 OPTS+=" --seed ${SEED}"
 # deepspeed
 OPTS+=" --deepspeed"
-# OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json"
-OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_fp32.json"
+OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json"
 # gen
 OPTS+=" --do-sample"
 OPTS+=" --top-k 0"
@@ -98,12 +99,14 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-# CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation.py ${OPTS}"
-CMD="env PYTHONPATH=/opt/conda/lib/python3.10/site-packages torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation.py ${OPTS}"
+# CMD="env PYTHONPATH=/opt/conda/lib/python3.10/site-packages torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation.py ${OPTS}"
 
 
-# ${CMD}
-# ${CMD} \
-# >> ${SAVE_PATH}/train.log 2>&1 &
-echo "CMD: $CMD"
-$CMD
+${CMD}
+${CMD} \
+>> ${SAVE_PATH}/train.log 2>&1 &
+
+# Add
+# echo "CMD: $CMD"
+# $CMD

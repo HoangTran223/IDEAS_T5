@@ -174,12 +174,12 @@ class Distiller(nn.Module):
             self.dtype = torch.bfloat16
         elif self.args.model_dtype == "fp16":
             self.dtype = torch.float16
+        else:
+            raise NotImplementedError("Invalid model_dtype for f`{self.args.model_dtype}`")
 
         # Add
         # else:
-        #     raise NotImplementedError("Invalid model_dtype for f`{self.args.model_dtype}`")
-        else:
-            self.dtype = torch.float32
+        #     self.dtype = torch.float32
         
         model = AutoModelForCausalLM.from_pretrained(
             self.args.model_path, 
