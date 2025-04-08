@@ -25,16 +25,15 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="sft"
 # hp
-BATCH_SIZE=4
+BATCH_SIZE=1
 LR=0.00002
-GRAD_ACC=2
-EVAL_BATCH_SIZE=8
+GRAD_ACC=8
+EVAL_BATCH_SIZE=1
 EPOCH=10
 # length
-MAX_LENGTH=512
+MAX_LENGTH=64
 # runtime
-# PRECISION="fp16"
-PRECISION="bf16"
+PRECISION="fp16"
 CRITERION="cross_entropy"
 CONFIG="default-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
@@ -51,7 +50,7 @@ OPTS+=" --base-path ${BASE_PATH}"
 OPTS+=" --model-path ${CKPT_PATH}"
 OPTS+=" --model-type ${CKPT_TYPE}"
 OPTS+=" --n-gpu ${GPUS_PER_NODE}"
-# OPTS+=" --gradient-checkpointing"
+OPTS+=" --gradient-checkpointing"
 # data
 OPTS+=" --data-dir ${DATA_DIR}"
 OPTS+=" --num-workers 0"
@@ -85,8 +84,7 @@ OPTS+=" --criterion ${CRITERION}"
 OPTS+=" --seed ${SEED}"
 # deepspeed
 OPTS+=" --deepspeed"
-# OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json"
-OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload_bf16.json"
+OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json"
 # gen
 OPTS+=" --do-sample"
 OPTS+=" --top-k 0"

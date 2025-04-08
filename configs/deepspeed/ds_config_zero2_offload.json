@@ -15,6 +15,9 @@
     },
     "zero_force_ds_cpu_optimizer": false,
     "zero_allow_untested_optimizer": true,
+    "bf16": {
+        "enabled": false
+    },
     "fp16": {
         "enabled": true,
         "loss_scale": 0,
