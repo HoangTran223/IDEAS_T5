@@ -83,8 +83,8 @@ OPTS+=" --criterion ${CRITERION}"
 # seed
 OPTS+=" --seed ${SEED}"
 # deepspeed
-OPTS+=" --deepspeed"
-OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json"
+# OPTS+=" --deepspeed"
+# OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json"
 # gen
 OPTS+=" --do-sample"
 OPTS+=" --top-k 0"
