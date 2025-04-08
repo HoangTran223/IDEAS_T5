@@ -546,7 +546,9 @@ def main():
     if "bf16" in ds_config:
         args.fp32 = not ds_config["bf16"]["enabled"]
     log_rank(args)
-    args.deepspeed_config = None
+
+    # Add
+    # args.deepspeed_config = None
     
     # prepare for deepspeed ZeRO-3
     if ds_config is not None and ds_config["zero_optimization"]["stage"] == 3:
@@ -593,13 +595,21 @@ def main():
     print("Distiller dtype:", next(distiller.parameters()).dtype)
 
 
+    # model, optimizer, _, lr_scheduler = deepspeed.initialize(
+    #     model=distiller,
+    #     optimizer=optimizer,
+    #     args=args,
+    #     lr_scheduler=lr_scheduler,
+    #     mpu=None,
+    #     config_params=ds_config
+    # )
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=distiller,
         optimizer=optimizer,
         args=args,
         lr_scheduler=lr_scheduler,
         mpu=None,
-        config_params=ds_config
+        config=ds_config  # 
     )
     
     if args.do_train:
