@@ -590,8 +590,7 @@ def main():
         args=args,
         lr_scheduler=lr_scheduler,
         mpu=None,
-        config_params=ds_config,
-        dtype=torch.float16
+        config_params=ds_config
     )
     
     if args.do_train:
