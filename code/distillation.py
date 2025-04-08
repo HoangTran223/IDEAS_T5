@@ -560,7 +560,7 @@ def main():
     distiller = Distiller(args, device)
 
     ## Add
-    distiller = distiller.half()
+    distiller = distiller.half().cuda()
 
     dataset = prepare_dataset(args, distiller)
     
@@ -605,6 +605,7 @@ def main():
     # )
 
     print(">>> Using ds config:", args.deepspeed_config)
+    print("Model device:", next(distiller.parameters()).device)
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=distiller,
         optimizer=optimizer,
