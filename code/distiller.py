@@ -290,3 +290,14 @@ class Distiller(nn.Module):
             loss_denom,
         )
         return loss, logging_output
+    
+
+    ## Add
+    def half(self):
+        self.student_model = self.student_model.half()
+        if hasattr(self, "teacher_model") and self.teacher_model is not None:
+            self.teacher_model = self.teacher_model.half()
+        if hasattr(self, "projectors"):
+            self.projectors = self.projectors.half()
+        return self
+

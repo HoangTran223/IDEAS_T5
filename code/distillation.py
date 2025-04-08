@@ -558,7 +558,7 @@ def main():
     distiller = Distiller(args, device)
 
     ## Add
-    distiller.student_model = distiller.student_model.half()
+    distiller = distiller.half()
 
     dataset = prepare_dataset(args, distiller)
     
@@ -587,6 +587,11 @@ def main():
     optimizer = get_optimizer(args, distiller.student_model)
     optimizer = distiller.add_optimizer_param_group(optimizer)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
+
+    ## Add
+    print("Student model dtype:", next(distiller.student_model.parameters()).dtype)
+    print("Distiller dtype:", next(distiller.parameters()).dtype)
+
 
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=distiller,
