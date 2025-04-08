@@ -52,10 +52,10 @@ class ETP(nn.Module):
         # Sinkhorn's algorithm
 
         # Initialize a and b, also in bf16
-        # a = (torch.ones(M.shape[0]) / M.shape[0]).unsqueeze(1).to(device).to(dtype=torch.bfloat16)
-        # b = (torch.ones(M.shape[1]) / M.shape[1]).unsqueeze(1).to(device).to(dtype=torch.bfloat16)
-        a = (torch.ones(M.shape[0]) / M.shape[0]).unsqueeze(1).to(device)
-        b = (torch.ones(M.shape[1]) / M.shape[1]).unsqueeze(1).to(device)
+        a = (torch.ones(M.shape[0]) / M.shape[0]).unsqueeze(1).to(device).to(dtype=torch.bfloat16)
+        b = (torch.ones(M.shape[1]) / M.shape[1]).unsqueeze(1).to(device).to(dtype=torch.bfloat16)
+        # a = (torch.ones(M.shape[0]) / M.shape[0]).unsqueeze(1).to(device)
+        # b = (torch.ones(M.shape[1]) / M.shape[1]).unsqueeze(1).to(device)
 
         u = (torch.ones_like(a) / a.size()[0]).to(device)
 
