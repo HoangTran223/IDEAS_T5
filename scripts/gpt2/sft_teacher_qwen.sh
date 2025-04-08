@@ -33,7 +33,8 @@ EPOCH=10
 # length
 MAX_LENGTH=64
 # runtime
-PRECISION="fp16"
+# PRECISION="fp16"
+PRECISION="bf16"
 CRITERION="cross_entropy"
 CONFIG="default-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
@@ -84,7 +85,8 @@ OPTS+=" --criterion ${CRITERION}"
 OPTS+=" --seed ${SEED}"
 # deepspeed
 OPTS+=" --deepspeed"
-OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json"
+# OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json"
+OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload_bf16.json"
 # gen
 OPTS+=" --do-sample"
 OPTS+=" --top-k 0"

@@ -559,9 +559,6 @@ def main():
     log_rank("Initializing a distiller for knowledge distillation...")
     distiller = Distiller(args, device)
 
-    ## Add
-    distiller = distiller.half().cuda()
-
     dataset = prepare_dataset(args, distiller)
     
     dp_world_size = dist.get_world_size()
@@ -593,27 +590,19 @@ def main():
     ## Add
     print("Student model dtype:", next(distiller.student_model.parameters()).dtype)
     print("Distiller dtype:", next(distiller.parameters()).dtype)
-
-
-    # model, optimizer, _, lr_scheduler = deepspeed.initialize(
-    #     model=distiller,
-    #     optimizer=optimizer,
-    #     args=args,
-    #     lr_scheduler=lr_scheduler,
-    #     mpu=None,
-    #     config_params=ds_config
-    # )
-
     print(">>> Using ds config:", args.deepspeed_config)
     print("Model device:", next(distiller.parameters()).device)
+
+
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=distiller,
         optimizer=optimizer,
         args=args,
         lr_scheduler=lr_scheduler,
-        mpu=None
+        mpu=None,
+        config_params=ds_config
     )
-    
+
     if args.do_train:
         
         finetune(args, distiller.student_tokenizer, model, optimizer, lr_scheduler, dataset, device)
