@@ -15,7 +15,8 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 # model
-BASE_PATH=path_to_dskd_project
+# BASE_PATH=path_to_dskd_project
+BASE_PATH=/kaggle/working/
 CKPT_TYPE="qwen"
 CKPT_NAME="Qwen1.5-1.8B"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_TYPE}/${CKPT_NAME}"
@@ -98,5 +99,7 @@ export PYTHONPATH=${BASE_PATH}
 CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation.py ${OPTS}"
 
 # ${CMD}
-${CMD} \
->> ${SAVE_PATH}/train.log 2>&1 &
+# ${CMD} \
+# >> ${SAVE_PATH}/train.log 2>&1 &
+echo "CMD: $CMD"
+$CMD
