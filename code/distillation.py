@@ -591,9 +591,11 @@ def main():
         lr_scheduler=lr_scheduler,
         mpu=None,
         config_params=ds_config,
+        dtype=torch.float16
     )
     
     if args.do_train:
+        
         finetune(args, distiller.student_tokenizer, model, optimizer, lr_scheduler, dataset, device)
    
     if args.do_eval:
