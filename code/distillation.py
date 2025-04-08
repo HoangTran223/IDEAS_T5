@@ -603,13 +603,14 @@ def main():
     #     mpu=None,
     #     config_params=ds_config
     # )
+
+    print(">>> Using ds config:", args.deepspeed_config)
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=distiller,
         optimizer=optimizer,
         args=args,
         lr_scheduler=lr_scheduler,
-        mpu=None,
-        config=ds_config  # 
+        mpu=None
     )
     
     if args.do_train:
