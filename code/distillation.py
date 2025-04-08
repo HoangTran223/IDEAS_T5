@@ -556,9 +556,9 @@ def main():
     
     log_rank("Initializing a distiller for knowledge distillation...")
     distiller = Distiller(args, device)
-    ## Add
-    distiller = distiller.half()
 
+    ## Add
+    distiller.student_model = distiller.student_model.half()
 
     dataset = prepare_dataset(args, distiller)
     
