@@ -166,6 +166,19 @@ def finetune(
                 st_time = time.time()
                 loss, logging_output = model(
                     criterion, batch, logging_output, loss_denom)
+
+                # Add
+                if hasattr(criterion, "update_cost_weights"):
+                    keys = ["avg_c1", "avg_c2", "avg_c3", "avg_c4"]
+                    if all(k in logging_output for k in keys):
+                        cost_vals = torch.tensor([
+                            logging_output["avg_c1"],
+                            logging_output["avg_c2"],
+                            logging_output["avg_c3"],
+                            logging_output["avg_c4"]
+                        ], device=next(model.parameters()).device)
+                        criterion.update_cost_weights(cost_vals)
+                        
                 model.backward(loss)
                 model.step()
 

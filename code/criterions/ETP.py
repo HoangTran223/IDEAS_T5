@@ -72,7 +72,6 @@ class ETP(nn.Module):
                 err = torch.norm(torch.sum(torch.abs(bb - b), dim=0), p=float('inf'))
 
         transp = u * (K * v.T)
-
         loss_ETP = torch.sum(transp * M)
 
         return loss_ETP, transp
