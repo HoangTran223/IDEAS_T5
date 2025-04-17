@@ -1,4 +1,5 @@
 #! /bin/bash
+# GPUS=(0 1 2 3)
 GPUS=(1)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
@@ -35,11 +36,11 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot"
 
-BATCH_SIZE=2
+BATCH_SIZE=4
 LR=0.0004
-GRAD_ACC=4
-EVAL_BATCH_SIZE=2
-EPOCH=8
+GRAD_ACC=2
+EVAL_BATCH_SIZE=32
+EPOCH=20
 KD_RATE=0.5
 KD_TEMP=2.0
 
