@@ -1,38 +1,16 @@
-# Dual-Space Knowledge Distillation for Large Language Models (EMNLP 2024)
+# Training
 
-<small>Songming Zhang, Xue Zhang, Zengkui Sun, Yufeng Chen*, Jinan Xu</small>
+### For my model
+For GPT2-base, run:
+```bash
+bash scripts/gpt2/multicost_gpt2_base.sh
+```
 
-<a href="https://arxiv.org/abs/2406.17328"><img src="https://img.shields.io/badge/Paper-arXiv:2406.17328-Green"></a>
-<a href=#bibtex><img src="https://img.shields.io/badge/Paper-BibTex-yellow"></a>
+For TinyLLaMA-1.1B, run:
+```bash
+bash scripts/tinyllama/multicost_tinyllama.sh
+```
 
-Some of our code follows [MiniLLM](https://github.com/microsoft/LMOps/tree/main/minillm) and [Distillm](https://github.com/jongwooko/distillm/tree/master).
-
-## News
-- \[2024.10.21\] Our code has supported the distillation from a **72B** model to a 1.5B model with DeepSpeed ZeRO-3.
-- \[2024.09.21\] Our paper has been accepted by the main conference of EMNLP 2024！🥳🥳
-
-## Requirements
-- deepspeed >= 0.14.0
-- torch >= 2.0.1
-- transformers >= 4.40.2
-- peft >= 0.8.2
-- rouge_score >= 0.1.2
-
-## Data
-The processed data used in our paper can be downloaded [here](https://drive.google.com/drive/folders/1ZUsNVgWevACV9D-AHVNi9C7PX_2itzb8?usp=sharing).
-
-## Models
-You can download the corresponding model files (e.g., `pytorch_model.bin` or `model.safetensors`) of LLMs used in this paper into `model_hub/*/*/`.
-
-Here are the links of these models on huggingface:
-- GPT2-120M: [Here](https://huggingface.co/openai-community/gpt2)
-- GPT2-1.5B (trained on Dolly by Gu et al.): [Here](https://github.com/microsoft/LMOps/blob/main/minillm/README.md#31-resources)
-- Qwen1.5-1.8B: [Here](https://huggingface.co/Qwen/Qwen1.5-1.8B)
-- TinyLLaMA-1.1B: [Here](https://huggingface.co/TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T)
-- Llama2-7B: [Here](https://huggingface.co/meta-llama/Llama-2-7b-hf)
-- Mistral-7B: [Here](https://huggingface.co/mistralai/Mistral-7B-v0.1)
-
-## Training
 ### SFT for teacher models
 For Qwen1.5-1.8B (full fine-tuning), run:
 ```bash
@@ -63,21 +41,42 @@ bash scripts/tinyllama/sft_tinyllama.sh
 P.S. You may encounter an error **when directly loading the model checkpoint of TinyLLaMA**. This is because of the mismatched versions of `transformers` between TinyLLaMA suggested (4.31) and the one you use.
 A concise solution to fix this can be referred to in [this issue](https://github.com/songmzhang/DSKD/issues/8).
 
-### KD for the Same Vocabulary
-#### Vanilla KD framework
+
+### Baseline: Dual-Space KD with CMA
 For GPT2-base, run:
 ```bash
-bash scripts/gpt2/vanilla_kd_gpt2_base.sh
+bash scripts/gpt2/dskd_cma_gpt2_base.sh
 ```
 
 For TinyLLaMA-1.1B, run:
 ```bash
-bash scripts/tinyllama/vanilla_kd_tinyllama.sh
+bash scripts/tinyllama/dskd_cma_tinyllama.sh
 ```
 
-You can change the distance functions (e.g., KL Divergence, Reverse KL Divergence, JS Divergence, etc.) using `KD_OBJ` in the above scripts.
+### Baseline: Logits Alignment by Minimum Edit Distance 
+For GPT2-base, run:
+```bash
+bash scripts/gpt2/minedit_gpt2_base.sh
+```
 
-#### Dual-Space KD framework
+For TinyLLaMA-1.1B, run:
+```bash
+bash scripts/tinyllama/minedit_tinyllama.sh
+```
+
+### Baseline: Universal Logit Distillation 
+For GPT2-base, run:
+```bash
+bash scripts/gpt2/uld_gpt2_base.sh
+```
+
+For TinyLLaMA-1.1B, run:
+```bash
+bash scripts/tinyllama/uld_tinyllama.sh
+```
+
+
+### Baseline: Dual-Space KD framework
 For GPT2-base, run:
 ```bash
 bash scripts/gpt2/dskd_gpt2_base.sh
@@ -90,42 +89,20 @@ bash scripts/tinyllama/dskd_tinyllama.sh
 
 Also, you can change the distance functions using `KD_OBJ` in the above scripts.
 
-### KD for different vocabularies
-#### Logits Alignment by Minimum Edit Distance ([paper](https://arxiv.org/abs/2401.10491), [original implementation](https://github.com/fanqiwan/FuseAI))
-The original implementation in this [repo](https://github.com/fanqiwan/FuseAI) pre-processes the logit alignment before distillation, while we re-implement this method by faster calculating alignment during distillation in [code/criterions/min_edit_dis_kld.py](https://github.com/songmzhang/DSKD/blob/1fc215196ea473aab971eea3b765ade57bbfb21b/code/criterions/min_edit_dis_kld.py).
 
+### Baseline: Vanilla KD framework
 For GPT2-base, run:
 ```bash
-bash scripts/gpt2/minedit_gpt2_base.sh
+bash scripts/gpt2/vanilla_kd_gpt2_base.sh
 ```
 
 For TinyLLaMA-1.1B, run:
 ```bash
-bash scripts/tinyllama/minedit_tinyllama.sh
+bash scripts/tinyllama/vanilla_kd_tinyllama.sh
 ```
 
-#### Universal Logit Distillation ([paper](https://arxiv.org/abs/2402.12030), [original implementation](https://github.com/Nicolas-BZRD/llm-recipes))
-We also re-implement this method in [code/criterions/universal_logit_distillation.py](https://github.com/songmzhang/DSKD/blob/1fc215196ea473aab971eea3b765ade57bbfb21b/code/criterions/universal_logit_distillation.py).
+You can change the distance functions (e.g., KL Divergence, Reverse KL Divergence, JS Divergence, etc.) using `KD_OBJ` in the above scripts.
 
-For GPT2-base, run:
-```bash
-bash scripts/gpt2/uld_gpt2_base.sh
-```
-
-For TinyLLaMA-1.1B, run:
-```bash
-bash scripts/tinyllama/uld_tinyllama.sh
-```
-
-#### Our Dual-Space KD with Cross-Model Attention (CMA)
-For GPT2-base, run:
-```bash
-bash scripts/gpt2/dskd_cma_gpt2_base.sh
-```
-
-For TinyLLaMA-1.1B, run:
-```bash
-bash scripts/tinyllama/dskd_cma_tinyllama.sh
 ```
 
 ### File Structures in Output Directory
@@ -190,14 +167,20 @@ Please note that `MODEL_PATH` in `run_eval_lora.sh` should be changed for differ
 
 Similarly, `LORA_ADAPTER_PATH` is the **absolute path** of the LoRA adapter files like `/home/xxx/DSKD/outputs/tinyllama/tinyllama-1.1b-3T/sft/criterion=cross_entropy__lora-rank=256-alpha=8.../epochA_step...`.
 
-## BibTeX
-If you find this repo useful for your research, please consider citing our paper:
+## Deepspeed
+- Cần Deepspeed>= 0.14.0 (Repo github đã có thư mục deepspeed rồi nên không cần tải thư viện này)
 
-```
-@article{zhang2024dskd,
-      title={Dual-Space Knowledge Distillation for Large Language Models}, 
-      author={Songming Zhang and Xue Zhang and Zengkui Sun and Yufeng Chen and Jinan Xu},
-      year={2024},
-      journal={arXiv preprint arXiv:2406.17328},
-}
-```
+## Data
+The processed data used in our paper can be downloaded [here](https://drive.google.com/drive/folders/1ZUsNVgWevACV9D-AHVNi9C7PX_2itzb8?usp=sharing).
+
+## Models
+You can download the corresponding model files (e.g., `pytorch_model.bin` or `model.safetensors`) of LLMs used in this paper into `model_hub/*/*/`.
+
+Here are the links of these models on huggingface:
+- GPT2-120M: [Here](https://huggingface.co/openai-community/gpt2)
+- GPT2-1.5B (trained on Dolly by Gu et al.): [Here](https://github.com/microsoft/LMOps/blob/main/minillm/README.md#31-resources)
+- Qwen1.5-1.8B: [Here](https://huggingface.co/Qwen/Qwen1.5-1.8B)
+- TinyLLaMA-1.1B: [Here](https://huggingface.co/TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T)
+- Llama2-7B: [Here](https://huggingface.co/meta-llama/Llama-2-7b-hf)
+- Mistral-7B: [Here](https://huggingface.co/mistralai/Mistral-7B-v0.1)
+
