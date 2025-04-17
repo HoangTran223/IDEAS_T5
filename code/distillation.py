@@ -162,7 +162,7 @@ def finetune(
             dist.all_reduce(global_token_num, dist.ReduceOp.SUM, group=dp_group)
             loss_denom = global_token_num / (args.gradient_accumulation_steps * dp_world_size)
 
-            update_interval = 300
+            update_interval = 200
             step_since_last_update = 0
             for batch in global_batch:
                 st_time = time.time()
@@ -174,15 +174,14 @@ def finetune(
 
                 if hasattr(criterion, "update_cost_weights") and step_since_last_update >= update_interval:
                     print_rank(f"[DEBUG] Updating cost weights at step {step}")
-                    keys = ["avg_c1", "avg_c2", "avg_c3", "avg_c4", "avg_c5", "avg_c6"]
+                    keys = ["avg_c1", "avg_c2", "avg_c3", "avg_c4", "avg_c5"]
                     if all(k in logging_output and isinstance(logging_output[k], list) and len(logging_output[k]) > 0 for k in keys):
                         cost_vals = torch.tensor([
                             logging_output["avg_c1"][-1],
                             logging_output["avg_c2"][-1],
                             logging_output["avg_c3"][-1],
                             logging_output["avg_c4"][-1],
-                            logging_output["avg_c5"][-1],
-                            logging_output["avg_c6"][-1]
+                            logging_output["avg_c5"][-1]
                         ], device=next(model.parameters()).device)
                         criterion.update_cost_weights(cost_vals)
                         step_since_last_update = 0

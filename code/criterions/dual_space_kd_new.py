@@ -23,15 +23,13 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         else:
             self.dtype = torch.float32
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.proj_U = nn.Linear(args.hidden_dim_student, args.max_teacher_len, bias=False).to(self.device, dtype=dtype)
-        # self.proj_V = nn.Linear(args.hidden_dim_teacher, args.max_student_len, bias=False).to(self.device, dtype=dtype)
-                
+
         self.window_size = 2  
         self.sigma = 1.0  
-        self.salience_proj_s = nn.Linear(args.hidden_dim_student, 1, bias=True).to(self.device, dtype=self.dtype)
-        self.salience_proj_t = nn.Linear(args.hidden_dim_teacher, 1, bias=True).to(self.device, dtype=self.dtype)
+        # self.salience_proj_s = nn.Linear(args.hidden_dim_student, 1, bias=True).to(self.device, dtype=self.dtype)
+        # self.salience_proj_t = nn.Linear(args.hidden_dim_teacher, 1, bias=True).to(self.device, dtype=self.dtype)
         self.cost_weights = nn.Parameter(
-            torch.tensor([0.15, 0.15, 0.2, 0.2, 0.15, 0.15], dtype=self.dtype, device=self.device)
+            torch.tensor([0.23, 0.13, 0.22, 0.16, 0.26], dtype=self.dtype, device=self.device)
         )
 
     def forward(
@@ -91,7 +89,7 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         teacher_pad_mask = input_data[f"teacher_{distiller.teacher_model_type}_attention_mask"]
         pad_mask = pad_mask.bool()
         teacher_pad_mask = teacher_pad_mask.bool()
-        
+
         # print(f"[DEBUG] hidden_state_student.shape: {hidden_state_student.shape}")
         # print(f"[DEBUG] hidden_state_teacher.shape: {hidden_state_teacher.shape}")
 
@@ -158,10 +156,9 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
             # print(f"[DEBUG] teacher_seq.shape: {teacher_seq.shape}")
             # print(f"[DEBUG] student_seq.shape: {student_seq.shape}")
             
-
             M = teacher_seq.size(0)  
             N = student_seq.size(0)  
-            # print(f"M: {M}, N: {N}")
+            print(f"M: {M}, N: {N}")
 
             C1 = pairwise_attention_distance(student_seq, teacher_seq)
                         
@@ -234,25 +231,23 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
             #         t_ctx = get_context_repr(proj_teacher_seq, j, self.window_size)  # (d,)
             #         C5[i, j] = torch.norm(s_ctx - t_ctx, p=2) 
             
-            sal_s = torch.sigmoid(self.salience_proj_s(student_seq)).squeeze(-1)  # (N,)
-            sal_t = torch.sigmoid(self.salience_proj_t(teacher_seq_raw)).squeeze(-1)
+            # sal_s = torch.sigmoid(self.salience_proj_s(student_seq)).squeeze(-1)  # (N,)
+            # sal_t = torch.sigmoid(self.salience_proj_t(teacher_seq_raw)).squeeze(-1)
 
-            C6 = torch.abs(sal_s.unsqueeze(1) - sal_t.unsqueeze(0))  # (N, M)
+            # C6 = torch.abs(sal_s.unsqueeze(1) - sal_t.unsqueeze(0))  # (N, M)
             
             # print(f"C1: {C1.shape}, C2: {C2.shape}, C3: {C3.shape}, C4: {C4.shape}", "C5: {C5.shape}, C6: {C6.shape}")
             
-            for i, C in enumerate([C1, C2, C3, C4, C5, C6], 1):
+            for i, C in enumerate([C1, C2, C3, C4, C5], 1):
                 if torch.isnan(C).any():
                     print(f"[ERROR] C{i} contains NaN. min: {C[~torch.isnan(C)].min()}, max: {C[~torch.isnan(C)].max()}")
-
 
             total_cost = (
                 self.cost_weights[0] * C1 +
                 self.cost_weights[1] * C2 +
                 self.cost_weights[2] * C3 +
                 self.cost_weights[3] * C4 +
-                self.cost_weights[4] * C5 +
-                self.cost_weights[5] * C6
+                self.cost_weights[4] * C5 
             )
             
             total_cost = total_cost.to(dtype=self.dtype)
@@ -268,7 +263,6 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         log["avg_c3"] = C3.mean().item()
         log["avg_c4"] = C4.mean().item()
         log["avg_c5"] = C5.mean().item()
-        log["avg_c6"] = C6.mean().item()
 
         return loss, log
 
@@ -306,23 +300,8 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         # new_weights = torch.tensor(alpha.value, dtype=self.cost_weights.dtype, device=self.cost_weights.device)
         # self.cost_weights.data = new_weights
 
-        alpha_str = ", ".join([f"{w:.4f}" for w in new_weights.tolist()])
+        alpha_str = ", ".join([f"{w:.5f}" for w in new_weights.tolist()])
         print(f"Updated alpha weights: [{alpha_str}]")
-        
-    # def update_cost_weights(self, cost_values):
-    #     """
-    #     Cập nhật trọng số cost theo công thức Lagrange đã giải:
-    #         alpha_i = 1/3 - (c_i - avg(c))/ (2*sigma)
-    #     Sau đó, chuẩn hóa để tổng bằng 1.
-    #     """
-    #     avg_cost = torch.mean(cost_values)
-    #     new_weights = 1/3 - (cost_values - avg_cost) / (2 * self.sigma)
-    #     new_weights = new_weights / new_weights.sum()
-    #     self.cost_weights.data = new_weights
-
-    #     alpha_str = ", ".join([f"{w:.4f}" for w in new_weights.tolist()])
-    #     print_rank(f"Updated alpha weights: [{alpha_str}]")
-    
         
     
     def compute_dual_space_kd_loss_with_cma(
