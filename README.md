@@ -103,7 +103,7 @@ bash scripts/tinyllama/vanilla_kd_tinyllama.sh
 
 You can change the distance functions (e.g., KL Divergence, Reverse KL Divergence, JS Divergence, etc.) using `KD_OBJ` in the above scripts.
 
-```
+
 
 ### File Structures in Output Directory
 The output directory will be created under `./outputs` automatically after you run the training scripts. 
@@ -151,6 +151,8 @@ For LoRA fine-tuning, the file structure of the output directory is as follows (
 │
 └── train.log (Training log)
 ```
+
+
 
 ## Evaluation
 ### Evaluate Full Fine-tuning Checkpoints
