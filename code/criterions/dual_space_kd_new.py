@@ -152,13 +152,9 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
             teacher_seq = teacher_seq[teacher_mask.bool()]  # Shape: (valid_seq_len1, hidden_dim = 768)
             student_seq = student_seq[student_mask.bool()]  # Shape: (valid_seq_len2, hidden_dim)
             
-            # print(f"[DEBUG] teacher_seq_raw.shape: {teacher_seq_raw.shape}")
-            # print(f"[DEBUG] teacher_seq.shape: {teacher_seq.shape}")
-            # print(f"[DEBUG] student_seq.shape: {student_seq.shape}")
-            
             M = teacher_seq.size(0)  
             N = student_seq.size(0)  
-            print(f"M: {M}, N: {N}")
+            # print(f"M: {M}, N: {N}")
 
             C1 = pairwise_attention_distance(student_seq, teacher_seq)
                         
@@ -233,7 +229,6 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
             
             # sal_s = torch.sigmoid(self.salience_proj_s(student_seq)).squeeze(-1)  # (N,)
             # sal_t = torch.sigmoid(self.salience_proj_t(teacher_seq_raw)).squeeze(-1)
-
             # C6 = torch.abs(sal_s.unsqueeze(1) - sal_t.unsqueeze(0))  # (N, M)
             
             # print(f"C1: {C1.shape}, C2: {C2.shape}, C3: {C3.shape}, C4: {C4.shape}", "C5: {C5.shape}, C6: {C6.shape}")
@@ -300,7 +295,7 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         # new_weights = torch.tensor(alpha.value, dtype=self.cost_weights.dtype, device=self.cost_weights.device)
         # self.cost_weights.data = new_weights
 
-        alpha_str = ", ".join([f"{w:.5f}" for w in new_weights.tolist()])
+        alpha_str = ", ".join([f"{w:.7f}" for w in new_weights.tolist()])
         print(f"Updated alpha weights: [{alpha_str}]")
         
     
@@ -360,9 +355,19 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         norm_tea_target_embeds = tea_target_embeds / tea_target_embeds.std()
         norm_teacher_hiddens = teacher_hiddens / teacher_hiddens.std()
 
+        ## Add
+        # stu_index_embeds = stu_index_embeds.to(dtype=next(distiller.projectors["query"].parameters()).dtype)
         stu_q_hiddens = distiller.projectors["query"](stu_index_embeds).float()
+        # stu_q_hiddens = distiller.projectors["query"](stu_index_embeds)
+
+        
         tea_k_hiddens = norm_tea_index_embeds.float()
 
+        ## Add 
+        # hiddens_ = hiddens.to(dtype=next(distiller.projectors["s2t"].parameters()).dtype)
+        # stu_v_hiddens = distiller.projectors["s2t"](hiddens_)
+        # teacher_combined = (norm_teacher_hiddens + norm_tea_target_embeds).to(dtype=next(distiller.projectors["t2s"].parameters()).dtype)
+        # tea_v_hiddens = distiller.projectors["t2s"](teacher_combined)
         stu_v_hiddens = distiller.projectors["s2t"](hiddens).float()
         tea_v_hiddens = distiller.projectors["t2s"](
             norm_teacher_hiddens + norm_tea_target_embeds

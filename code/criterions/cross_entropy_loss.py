@@ -92,13 +92,41 @@ class CrossEntropyLoss(nn.Module):
             log["teacher_target_logits"] = teacher_target_logits
             log["teacher_non_target_logits"] = teacher_non_target_logits
     
+    # def record_logging_output(self, logging_output, batch_denom, content):
+    #     for k, v in content.items():
+    #         if isinstance(v, torch.Tensor):
+    #             rec = v.clone()
+    #         else:
+    #             rec = torch.tensor(v)
+
+    #         # với avg_c* thì không chia batch_denom
+    #         if not k.startswith("avg_c"):
+    #             rec = rec / batch_denom
+
+    #         dist.all_reduce(record_v, dist.ReduceOp.SUM)
+    #         record_v = record_v.item() / dist.get_world_size()
+    #         if k in logging_output:
+    #             logging_output[k].append(record_v)
+    #         else:
+    #             logging_output[k] = [record_v]
+    #     return logging_output
     def record_logging_output(self, logging_output, batch_denom, content):
         for k, v in content.items():
-            record_v = v / batch_denom
-            dist.all_reduce(record_v, dist.ReduceOp.SUM)
-            record_v = record_v.item() / dist.get_world_size()
-            if k in logging_output:
-                logging_output[k].append(record_v)
+            # nếu v đã là tensor, dùng luôn; còn float/int thì wrap thành tensor
+            if isinstance(v, torch.Tensor):
+                rec = v.clone()
             else:
-                logging_output[k] = [record_v]
+                rec = torch.tensor(v, device=self.device)
+
+            # với avg_c* thì không chia batch_denom
+            if not k.startswith("avg_c"):
+                rec = rec / batch_denom
+
+            # đồng bộ qua tất cả GPU
+            dist.all_reduce(rec, dist.ReduceOp.SUM)
+
+            # đưa về scalar và chia world_size
+            val = rec.item() / dist.get_world_size()
+
+            logging_output.setdefault(k, []).append(val)
         return logging_output
