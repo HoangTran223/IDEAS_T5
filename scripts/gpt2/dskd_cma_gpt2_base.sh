@@ -96,7 +96,7 @@ OPTS+=" --max-prompt-length 256"
 OPTS+=" --do-train"
 OPTS+=" --do-valid"
 OPTS+=" --eval-gen"
-OPTS+=" --load /home/mcn/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot/criterion=dual_space_kd_with_cma_ot__forward_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.5__kd^temp=2.0__epoch=10__bsz=2x4x1=8__lr=0.0005__proj^lr=0.001/epoch7_step10003_loss5.4078_rougel24.6491"
+# OPTS+=" --load /home/mcn/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot/criterion=dual_space_kd_with_cma_ot__forward_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.5__kd^temp=2.0__epoch=10__bsz=2x4x1=8__lr=0.0005__proj^lr=0.001/epoch7_step10003_loss5.4078_rougel24.6491"
 
 
 # add
