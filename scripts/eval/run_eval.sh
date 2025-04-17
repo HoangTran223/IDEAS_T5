@@ -1,12 +1,14 @@
 #!/bin/bash
-GPUS=(0)
-WORK_DIR=/home/mcn/tue_x/DSKD
+# GPUS=(0)
+GPUS=(0 1 2 3)
+
+# WORK_DIR=/home/mcn/tue_x/DSKD
+WORK_DIR=path_to_dskd_project
+
 MASTER_PORT=66$(($RANDOM%90+10))
 DEVICE=$(IFS=,; echo "${GPUS[*]}")
 
-# CKPT_PATH=${1}
 CKPT_PATH=${1}
-# BATCH_SIZE=${2-32}
 BATCH_SIZE=${2-2}
 
 for seed in 10 20 30 40 50

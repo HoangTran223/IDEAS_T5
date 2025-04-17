@@ -1,52 +1,36 @@
 #! /bin/bash
 set -e
-# export CUDA_VISIBLE_DEVICES=${0}
+export CUDA_VISIBLE_DEVICES=${1}
+MASTER_PORT=${2}
+GPUS_PER_NODE=${3}
+
 MASTER_ADDR=localhost
-MASTER_PORT=${1}
 NNODES=1
 NODE_RANK=0
-GPUS_PER_NODE=${2}
 
-if ! command -v nvidia-smi &> /dev/null || [ $(nvidia-smi --query-gpu=count --format=csv,noheader | wc -l) -eq 0 ] || [ $(nvidia-smi --query-gpu=count --format=csv,noheader) -eq 0 ]; then
-    echo "Error: No GPU detected. Please check NVIDIA driver and CUDA installation."
-    echo "Falling back to CPU (not recommended for evaluation)."
-    DISTRIBUTED_ARGS=""
-    USE_DEEPSPEED=false
-    DEVICE="cpu"
-else
-    echo "GPU detected, using GPU 0"
-    DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
-                      --nnodes $NNODES \
-                      --node_rank $NODE_RANK \
-                      --master_addr $MASTER_ADDR \
-                      --master_port $MASTER_PORT"
-    USE_DEEPSPEED=true
-    DEVICE="cuda:0"
-    export CUDA_VISIBLE_DEVICES=0  # Chỉ định GPU 0
-fi
-
-# DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
-#                   --nnodes $NNODES \
-#                   --node_rank $NODE_RANK \
-#                   --master_addr $MASTER_ADDR \
-#                   --master_port $MASTER_PORT"
+DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
+                  --nnodes $NNODES \
+                  --node_rank $NODE_RANK \
+                  --master_addr $MASTER_ADDR \
+                  --master_port $MASTER_PORT"
 
 # model
-BASE_PATH=/home/mcn/tue_x/DSKD
-CKPT_PATH=${3}
-# CKPT_SETTING=$(echo ${CKPT_PATH} | awk -F'/' '{print $(NF-4)"/"$(NF-3)"/"$(NF-2)"/"$(NF-1)}')
-# MODEL_TYPE=$(echo ${CKPT_PATH} | awk -F'/' '{print $(NF-4)}')
-MODEL_TYPE="gpt2"
-# task
+# BASE_PATH=/home/mcn/tue_x/DSKD
+BASE_PATH=${4}
+CKPT_PATH=${5}
+CKPT_SETTING=$(echo ${CKPT_PATH} | awk -F'/' '{print $(NF-4)"/"$(NF-3)"/"$(NF-2)"/"$(NF-1)}')
+MODEL_TYPE=$(echo ${CKPT_PATH} | awk -F'/' '{print $(NF-6)}')
+# MODEL_TYPE="gpt2"
+
 TASK="eval_main"
-# data
-DATA_NAME=${4}
+DATA_NAME=${6}
 DATA_DIR="${BASE_PATH}/data/${DATA_NAME}"
-# DATA_DIR="${BASE_PATH}/processed_data/${DATA_NAME}/full/gpt2"
-DATA_NUM=${7--1}
+DATA_NUM=${9--1}
+
 # hp
-EVAL_BATCH_SIZE=${5}
-SEED=${6}
+VAL_BATCH_SIZE=${7}
+SEED=${8}
+
 # runtime
 SAVE_PATH=$(dirname ${CKPT_PATH})
 
@@ -81,7 +65,6 @@ OPTS+=" --do-sample"
 OPTS+=" --top-k 0"
 OPTS+=" --top-p 1.0"
 OPTS+=" --temperature 1.0"
-
 
 export NCCL_DEBUG=""
 export TOKENIZERS_PARALLELISM=false
