@@ -4,6 +4,9 @@
 
 - Install all dependencies from requirements.txt
 
+- Need Deepspeed>= 0.14.0 (Repo github đã có thư mục DeepSpeed rồi, nên không cần tải thư viện này)
+
+
 # Training
 
 ### For my model
@@ -179,8 +182,6 @@ Please note that `MODEL_PATH` in `run_eval_lora.sh` should be changed for differ
 
 Similarly, `LORA_ADAPTER_PATH` is the **absolute path** of the LoRA adapter files like `/home/xxx/DSKD/outputs/tinyllama/tinyllama-1.1b-3T/sft/criterion=cross_entropy__lora-rank=256-alpha=8.../epochA_step...`.
 
-## Deepspeed
-- Cần Deepspeed>= 0.14.0 (Repo github đã có thư mục deepspeed rồi nên không cần tải thư viện này)
 
 ## Data
 The processed data used in our paper can be downloaded [here](https://drive.google.com/drive/folders/1ZUsNVgWevACV9D-AHVNi9C7PX_2itzb8?usp=sharing).
