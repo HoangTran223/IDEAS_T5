@@ -1,3 +1,9 @@
+# Enviroment
+
+- The environment requires: Python 3.10 or 3.11
+
+- Install all dependencies from requirements.txt
+
 # Training
 
 ### For my model
