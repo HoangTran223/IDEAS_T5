@@ -29,7 +29,7 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         # self.salience_proj_s = nn.Linear(args.hidden_dim_student, 1, bias=True).to(self.device, dtype=self.dtype)
         # self.salience_proj_t = nn.Linear(args.hidden_dim_teacher, 1, bias=True).to(self.device, dtype=self.dtype)
         self.cost_weights = nn.Parameter(
-            torch.tensor([0.3, 0.13, 0.22, 0.17, 0.18], dtype=self.dtype, device=self.device)
+            torch.tensor([0.13, 0.3, 0.18, 0.17, 0.22], dtype=self.dtype, device=self.device)
         )
 
     def forward(

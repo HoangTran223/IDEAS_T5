@@ -53,7 +53,7 @@ MAX_LENGTH=512
 PRECISION="bf16"
 # PRECISION="fp16"
 CRITERION="dual_space_kd_with_cma_ot"
-KD_OBJ="forward_kl"
+KD_OBJ="skewed_forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
 
 CONFIG="${KD_OBJ}-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_NAME}__kd^rate=${KD_RATE}__kd^temp=${KD_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}__proj^lr=${PROJECTOR_LR}
