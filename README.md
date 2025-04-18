@@ -26,7 +26,7 @@ For Qwen1.5-1.8B (full fine-tuning), run:
 bash scripts/gpt2/sft_teacher_qwen.sh
 ```
 
-- Đã có sẵn một model SFT của Qwen1.5-1.8B (full fine-tuning):
+- Đã có sẵn model SFT của Qwen1.5-1.8B (full fine-tuning) và của Mistral-7B (LoRA):
 
 https://drive.google.com/drive/folders/11Eba3lgnWZGjFW2EPUQVC1nLv6-LRI-9?usp=sharing
 
