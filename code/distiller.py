@@ -99,9 +99,11 @@ class Distiller(nn.Module):
         self.projectors = nn.ModuleDict()
         projector_config = json.load(open(self.args.projector_config_path))
         name_dict = {
+            # Add
             "s": self.student_hidden_size, 
             "t": self.teacher_hidden_size,
-            "relu": nn.ReLU()
+            "relu": nn.ReLU(),
+            "p": self.args.proj_dim
         }
         # auto-parse projector config strings to construct nn.Module
         for projector_name in projector_config:

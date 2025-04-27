@@ -15,5 +15,7 @@
     "ot": {
         "enabled": true,
         "structure": "t-s"
-    }
+    },
+    "cproj_s": { "enabled": true, "structure": "s-p" },
+    "cproj_t": { "enabled": true, "structure": "t-p" }
 }

@@ -31,14 +31,14 @@ TEACHER_PEFT_PATH="path_to_teacher_sft_ckpt"
 DATA_DIR="${BASE_PATH}/data/dolly/"
 
 # task
-TASK="dual_space_kd_with_cma_ot"
+TASK="dual_space_kd_with_cma_ot_kb3"
 
 BATCH_SIZE=4
-LR=0.001
+LR=0.002
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
-EPOCH=10
-KD_RATE=0.5
+EPOCH=20
+KD_RATE=0.7
 KD_TEMP=2.0
 LORA_RANK=256
 LORA_ALPHA=8
@@ -51,7 +51,7 @@ PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
 PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
-CRITERION="dual_space_kd_with_cma_ot"
+CRITERION="dual_space_kd_with_cma_ot_kb3"
 KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
 
 CONFIG="${KD_OBJ}-lora-rank=${LORA_RANK}-alpha=${LORA_ALPHA}-dropout=${LORA_DROPOUT}-${PRECISION}"

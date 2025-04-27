@@ -42,8 +42,9 @@ def add_model_args(parser: argparse.ArgumentParser):
     # Add
     group.add_argument("--hidden-dim-student", type=int, default=768)
     group.add_argument("--hidden-dim-teacher", type=int, default=2048)
+    group.add_argument("--proj_dim", type=int, default=512)
     group.add_argument("--max-student-len", type=int, default=512)
-    group.add_argument("--max-teacher-len", type=int, default=512)
+    group.add_argument("--max-teacher-len", type=int, default=1024)
     group.add_argument("--precision", type=str, default="fp32", choices=["fp32", "fp16", "bf16"],
                    help="Training precision: fp32, fp16, or bf16")
 
