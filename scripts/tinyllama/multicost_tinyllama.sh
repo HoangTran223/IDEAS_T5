@@ -31,14 +31,14 @@ TEACHER_PEFT_PATH="path_to_teacher_sft_ckpt"
 DATA_DIR="${BASE_PATH}/data/dolly/"
 
 # task
-TASK="dual_space_kd_with_cma_ot_kb3"
+TASK="dual_space_kd_with_cma_ot"
 
 BATCH_SIZE=4
-LR=0.002
+LR=0.001
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=20
-KD_RATE=0.7
+KD_RATE=3.0  # [7.0]
 KD_TEMP=2.0
 LORA_RANK=256
 LORA_ALPHA=8
@@ -51,8 +51,8 @@ PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
 PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
-CRITERION="dual_space_kd_with_cma_ot_kb3"
-KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
+CRITERION="dual_space_kd_with_cma_ot"
+KD_OBJ="forward_kl"  # [reverse_kl]
 
 CONFIG="${KD_OBJ}-lora-rank=${LORA_RANK}-alpha=${LORA_ALPHA}-dropout=${LORA_DROPOUT}-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_TYPE}__kd^rate=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}

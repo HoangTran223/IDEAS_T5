@@ -1,4 +1,3 @@
-#! /bin/bash
 GPUS=(1)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
@@ -35,13 +34,13 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot"
 
-BATCH_SIZE=1
-LR=0.0005
-GRAD_ACC=1
-EVAL_BATCH_SIZE=1
+BATCH_SIZE=2
+LR=0.006
+GRAD_ACC=2
+EVAL_BATCH_SIZE=2
 EPOCH=20
-KD_RATE=0.7
-KD_TEMP=2.0
+KD_RATE=3.0
+KD_TEMP=3.0
 
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
@@ -59,7 +58,7 @@ SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_NAME}__kd^rat
 SAVE_PATH="${BASE_PATH}/outputs/${CKPT_TYPE}/${CKPT_NAME}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
-SEED=20
+SEED=10
 
 mkdir -p ${SAVE_PATH}
 
@@ -109,7 +108,7 @@ OPTS+=" --do-valid"
 OPTS+=" --eval-gen"
 
 # To load checkpoints, for example:
-# OPTS+=" --load /mnt/nam_x/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot/criterion=dual_space_kd_with_cma_ot__forward_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.6__kd^temp=2.0__epoch=20__bsz=4x2x1=8__lr=0.0005__proj^lr=0.001/epoch19_step27151_loss7.8430_rougel25.5962"
+OPTS+=" --load /mnt/nam_x/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot_kb3/criterion=dual_space_kd_with_cma_ot_kb3__reverse_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.7__kd^temp=2.5__epoch=10__bsz=4x2x1=8__lr=0.0003__proj^lr=0.004/epoch1_step1429_loss7.7672_rougel26.1746"
 
 OPTS+=" --precision ${PRECISION}"
 OPTS+=" --save-interval 1"

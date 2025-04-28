@@ -36,11 +36,11 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 TASK="dual_space_kd_with_cma_ot_kb3"
 
 BATCH_SIZE=4
-LR=0.0001
+LR=0.002
 GRAD_ACC=2
-EVAL_BATCH_SIZE=4
+EVAL_BATCH_SIZE=2
 EPOCH=10
-KD_RATE=0.8
+KD_RATE=3.0
 KD_TEMP=3.0
 
 # distiller
@@ -59,7 +59,7 @@ SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_NAME}__kd^rat
 SAVE_PATH="${BASE_PATH}/outputs/${CKPT_TYPE}/${CKPT_NAME}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
-SEED=10
+SEED=50
 
 mkdir -p ${SAVE_PATH}
 

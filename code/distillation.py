@@ -9,6 +9,7 @@ from torch.optim import AdamW
 import deepspeed
 import shutil
 import json
+import numpy as np
 from tqdm import tqdm
 import math
 from transformers import (
@@ -115,16 +116,14 @@ def finetune(
     }
     model_list = []
 
-    # log_rank("Evaluate model before training...")
-    # eval_loss, eval_results = evaluate(
-    #     args, 
-    #     tokenizer, 
-    #     model.module.student_model, 
-    #     dataset["dev"], 
-    #     "dev", 
-    #     device,
-    #     repeat_times=1
-    # )
+
+    ## Add
+    ## gradient_accumulation_steps=4, update_interval=50, 
+    ## ==> update after 50×4=200 minibatches
+    update_interval = 200
+    step_since_last_update = 0
+    cost_values_logits_buffer = []
+    cost_values_hidden_buffer = []
 
     for epoch in range(args.num_epochs):
         sampler.set_epoch(epoch)
@@ -136,11 +135,7 @@ def finetune(
         epoch_step = 0
         epoch_loss, epoch_nll_loss, epoch_kd_loss = 0.0, 0.0, 0.0
         train_iter = iter(train_dataloader)
-
-        ## gradient_accumulation_steps=4, update_interval=50, 
-        ## ==> update after 50×4=200 minibatches
-        update_interval = 50
-        step_since_last_update = 0
+        global_step = 0
 
         while True:
             global_batch = []
@@ -161,7 +156,6 @@ def finetune(
             if end_epoch:
                 break
 
-            # get the true batch token num according to the whole batch (all_tok_num / (grad_acc * n_gpu))
             global_token_num = sum(
                 batch["output_batch"]["label"].ne(-100).sum() for batch in global_batch)
             dist.all_reduce(global_token_num, dist.ReduceOp.SUM, group=dp_group)
@@ -169,7 +163,8 @@ def finetune(
 
             for batch in global_batch:
                 st_time = time.time()
-                loss, logging_output = model(criterion, batch, logging_output, loss_denom)
+                # loss, logging_output = model(criterion, batch, logging_output, loss_denom)
+                loss, batch_logging_output = model(criterion, batch, logging_output, loss_denom)
                 
                 model.backward(loss)
                 model.step()
@@ -177,24 +172,68 @@ def finetune(
                 torch.cuda.synchronize()
                 elapsed_time = time.time() - st_time
                 logging_output["micro_step_time"].append(elapsed_time)
+
+                # Add
+                required_logits_keys = ["avg_c2_logits", "avg_c4_logits","avg_c_salience_logits"]
+                required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last", "avg_c7_last"]
+
+                if all(k in batch_logging_output for k in required_logits_keys + required_hidden_keys):
+                    def to_scalar(value):
+                        if isinstance(value, (int, float)):
+                            return float(value)
+                        elif isinstance(value, (list, tuple)):
+                            return float(np.mean(value))
+                        elif isinstance(value, torch.Tensor):
+                            return float(value.mean().item())
+                        else:
+                            raise ValueError(f"Invalid type for value: {type(value)}, value: {value}")
+                    try:
+
+                        cost_values_logits = [
+                            # to_scalar(batch_logging_output["avg_c1_last"]),
+                            to_scalar(batch_logging_output["avg_c2_logits"]),
+                            to_scalar(batch_logging_output["avg_c4_logits"]),
+                            to_scalar(batch_logging_output["avg_c_salience_logits"])
+                        ]
+                        cost_values_hidden = [
+                            to_scalar(batch_logging_output["avg_c2_last"]),
+                            to_scalar(batch_logging_output["avg_c5_last"]),
+                            to_scalar(batch_logging_output["avg_c6_last"]),
+                            to_scalar(batch_logging_output["avg_c7_last"])
+                        ]
+                    except ValueError as e:
+                        logger.error(f"Failed to convert logging_output to scalar: {e}, values: {batch_logging_output}")
+                        continue
+                    cost_values_logits_buffer.append(cost_values_logits)
+                    cost_values_hidden_buffer.append(cost_values_hidden)
+                else:
+                    print(f"Missing keys in batch_logging_output: {list(batch_logging_output.keys())}")
                 step += 1
 
-            # Add
             step_since_last_update += 1
             if hasattr(criterion, "update_cost_weights") and step_since_last_update >= update_interval:
-                print(f"[DEBUG] Updating cost weights at step {step}")
-                keys = ["avg_c1", "avg_c2", "avg_c3", "avg_c4", "avg_c5"]
-                if all(k in logging_output and isinstance(logging_output[k], list) and len(logging_output[k]) > 0 for k in keys):
-                    cost_vals = torch.tensor([
-                        logging_output["avg_c1"][-1],
-                        logging_output["avg_c2"][-1],
-                        logging_output["avg_c3"][-1],
-                        logging_output["avg_c4"][-1],
-                        logging_output["avg_c5"][-1]
-                    ], device=next(model.parameters()).device)
-                    criterion.update_cost_weights(cost_vals)
+                print(f"[DEBUG] Updating cost weights at global_step {global_step}")
+                if cost_values_logits_buffer and cost_values_hidden_buffer:
+                    expected_buffer_size = update_interval * args.gradient_accumulation_steps
+                    if len(cost_values_logits_buffer) != expected_buffer_size:
+                        print(f"Unexpected cost_values_logits_buffer size: {len(cost_values_logits_buffer)}, expected {expected_buffer_size}")
+                        cost_values_logits_buffer = []
+                        cost_values_hidden_buffer = []
+                        continue
+
+                    cost_values_logits = torch.tensor(cost_values_logits_buffer).mean(dim=0)
+                    cost_values_hidden = torch.tensor(cost_values_hidden_buffer).mean(dim=0)
+
+                    criterion.update_cost_weights(
+                            cost_values_logits=cost_values_logits.tolist(),
+                            cost_values_hidden=cost_values_hidden.tolist()
+                        )
+                    cost_values_logits_buffer = []
+                    cost_values_hidden_buffer = []
+
                 step_since_last_update = 0
-                        
+            
+            global_step += 1
             logging_output["global_step"] += 1
             logging_output["step_time"].append(time.time() - global_st_time)
             epoch_step += 1
