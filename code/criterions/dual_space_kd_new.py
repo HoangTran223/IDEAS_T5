@@ -28,9 +28,10 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         ## Add
         self.window_size = 4
         self.padding_id = padding_id
-        self.ot_weight_logits = 200.0
-        self.ot_weight_hidden = 200.0
-        self.kd_rate = 3.0
+        self.ot_weight_logits = 100.0
+        self.ot_weight_hidden = 100.0
+        self.ce_ = 10.0
+        self.kd_rate = 5.0
         self.tau_seq = 1.7
         self.top_k_vocab = 20
         self.total_steps = args.total_iters
@@ -108,7 +109,7 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         )
         log["kd_loss"] = kd_loss
 
-        total_loss = loss_ce + self.kd_rate * kd_loss + self.ot_weight_logits * ot_loss_logits + self.ot_weight_hidden * ot_loss_hidden
+        total_loss = self.ce_ * loss_ce + self.kd_rate * kd_loss + self.ot_weight_logits * ot_loss_logits + self.ot_weight_hidden * ot_loss_hidden
         log["loss"] = total_loss
         log["ot_loss_logits"] = ot_loss_logits
         log["ot_loss_hidden"] = ot_loss_hidden
