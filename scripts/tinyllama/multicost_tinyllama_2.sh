@@ -122,11 +122,16 @@ OPTS+=" --save-dir ${SAVE_PATH}"
 OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
-# add
-OPTS+=" --hidden-dim-student 2048"
-OPTS+=" --hidden-dim-teacher 4096"
-OPTS+=" --max-student-len 2048"
-OPTS+=" --max-teacher-len 2048"
+# Add
+OPTS+=" --hidden-dim-student 768"
+OPTS+=" --hidden-dim-teacher 2048"
+OPTS+=" --max-student-len 512"
+OPTS+=" --max-teacher-len 512"
+OPTS+=" --proj_dim 256"
+OPTS+=" --top_k_vocab 300"
+OPTS+=" --ot_weight_logits 50.0"
+OPTS+=" --ot_weight_hidden 10.0"
+OPTS+=" --ce_weight 10.0"
 
 # seed
 OPTS+=" --seed ${SEED}"

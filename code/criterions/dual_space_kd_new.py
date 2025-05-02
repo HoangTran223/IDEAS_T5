@@ -30,12 +30,12 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         # 2.5, 10.0, 1.7, 150, 100.0, 100.0, 0.7
         self.window_size = 4
         self.padding_id = padding_id
-        self.ot_weight_logits = 50.0
-        self.ot_weight_hidden = 10.0
-        self.ce_ = 10.0
+        self.ot_weight_logits = args.ot_weight_logits
+        self.ot_weight_hidden = args.ot_weight_hidden
+        self.ce_ = args.ce_weight
         self.kd_rate = args.kd_rate
         self.tau_seq = 1.7
-        self.top_k_vocab = 300
+        self.top_k_vocab = args.top_k_vocab
         self.total_steps = args.total_iters
         self.current_step = 0
         self.sigma = 0.7
