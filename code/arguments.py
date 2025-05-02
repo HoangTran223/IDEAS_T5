@@ -41,6 +41,11 @@ def add_model_args(parser: argparse.ArgumentParser):
 
     # Add
     group.add_argument("--hidden-dim-student", type=int, default=768)
+    group.add_argument("--top_k_vocab", type=int, default=300)
+    group.add_argument("--ot_weight_logits", type=float, default=50.0)
+    group.add_argument("--ot_weight_hidden", type=float, default=10.0)
+    group.add_argument("--ce_weight", type=float, default=10.0)
+
     group.add_argument("--hidden-dim-teacher", type=int, default=2048)
     group.add_argument("--proj_dim", type=int, default=512)
     group.add_argument("--max-student-len", type=int, default=512)
@@ -146,7 +151,7 @@ def add_hp_args(parser: argparse.ArgumentParser):
                        help='weight-decay')
     group.add_argument('--loss-scale', type=float, default=65536,
                        help='loss scale')
-    group.add_argument("--kd-rate", type=float, default=0.5)
+    group.add_argument("--kd-rate", type=float, default=2.5)
     group.add_argument("--kd-temperature", type=float, default=1.0)
     group.add_argument("--kd-objective", type=str, default="forward_kl")
     group.add_argument("--teacher-temperature", type=float, default=1.0)
