@@ -37,7 +37,7 @@ LR=0.0004
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=20
-KD_RATE=2.5  # [1.8]
+KD_RATE=2.5 
 KD_TEMP=3.0
 LORA_RANK=256
 LORA_ALPHA=8
@@ -129,7 +129,7 @@ OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 256"
 OPTS+=" --top_k_vocab 300"
-OPTS+=" --ot_weight_logits 50.0"
+OPTS+=" --ot_weight_logits 50.0"  
 OPTS+=" --ot_weight_hidden 10.0"
 OPTS+=" --ce_weight 10.0"
 

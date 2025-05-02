@@ -37,7 +37,7 @@ LR=0.0004
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=20
-KD_RATE=2.5   # [1.8]
+KD_RATE=2.5
 KD_TEMP=3.0
 LORA_RANK=256
 LORA_ALPHA=8
@@ -123,13 +123,16 @@ OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
 # add
+# KB1: --ot_weight_logits 2.0   --ot_weight_hidden 0.5  --ce_weight 2.0  KD_RATE = 1.5  KD_OBJ="forward_kl"
+# KB2: --ot_weight_logits 15.0  --ot_weight_hidden 0.1  --ce_weight 7.0 KD_RATE = 2.5  KD_OBJ="forward_kl"
+# KB3: --ot_weight_logits 15.0  --ot_weight_hidden 0.1  --ce_weight 7.0 KD_RATE = 2.5  KD_OBJ="reverse_kl"
 OPTS+=" --hidden-dim-student 768"
 OPTS+=" --hidden-dim-teacher 2048"
 OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 256"
 OPTS+=" --top_k_vocab 300"
-OPTS+=" --ot_weight_logits 50.0"
+OPTS+=" --ot_weight_logits 50.0"  
 OPTS+=" --ot_weight_hidden 10.0"
 OPTS+=" --ce_weight 10.0"
 

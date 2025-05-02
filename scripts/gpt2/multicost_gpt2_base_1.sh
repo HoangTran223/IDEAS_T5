@@ -34,7 +34,7 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot_kb1"
 
-BATCH_SIZE=4
+BATCH_SIZE=2
 LR=0.0004
 GRAD_ACC=2
 EVAL_BATCH_SIZE=2
@@ -44,7 +44,7 @@ KD_TEMP=3.0
 
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.002
+PROJECTOR_LR=0.004
 # length
 MAX_LENGTH=512
 # runtime
@@ -128,6 +128,7 @@ OPTS+=" --top_k_vocab 300"
 OPTS+=" --ot_weight_logits 50.0"
 OPTS+=" --ot_weight_hidden 10.0"
 OPTS+=" --ce_weight 10.0"
+
 
 # seed
 OPTS+=" --seed ${SEED}"
