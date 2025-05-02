@@ -32,12 +32,12 @@ TEACHER_MODEL_PATH="/mnt/nam_x/tue_x/model_hub/qwen/Qwen1.5-1.8B"
 DATA_DIR="${BASE_PATH}/data/dolly/"
 
 # task
-TASK="dual_space_kd_with_cma_ot_1"
+TASK="dual_space_kd_with_cma_ot_kb1"
 
 BATCH_SIZE=4
 LR=0.0004
 GRAD_ACC=2
-EVAL_BATCH_SIZE=16
+EVAL_BATCH_SIZE=2
 EPOCH=20
 KD_RATE=2.5
 KD_TEMP=3.0
@@ -50,7 +50,7 @@ MAX_LENGTH=512
 # runtime
 PRECISION="bf16"
 # PRECISION="fp16"
-CRITERION="dual_space_kd_with_cma_ot_1"
+CRITERION="dual_space_kd_with_cma_ot_kb1"
 KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
 
 CONFIG="${KD_OBJ}-${PRECISION}"
