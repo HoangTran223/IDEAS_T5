@@ -399,7 +399,7 @@ class DualSpaceKDWithCMA_OT_2(VariousDivergence):
     #     return loss, log
 
     
-    def update_cost_weights(self, cost_values_logits, cost_values_hidden):
+    def update_cost_weights(self, cost_values_logits):
         def to_scalar_list(values):
             if isinstance(values, torch.Tensor):
                 values = values.tolist()
@@ -424,9 +424,6 @@ class DualSpaceKDWithCMA_OT_2(VariousDivergence):
         cost_values_logits = to_scalar_list(cost_values_logits)
         cost_values_logits = torch.tensor(cost_values_logits, dtype=self.dtype, device=self.device)
 
-        cost_values_hidden = to_scalar_list(cost_values_hidden)
-        cost_values_hidden = torch.tensor(cost_values_hidden, dtype=self.dtype, device=self.device)
-        
         ###
         c_vals_logits = cost_values_logits.detach().cpu().float().numpy()
         n_logits = len(c_vals_logits)  
@@ -448,27 +445,6 @@ class DualSpaceKDWithCMA_OT_2(VariousDivergence):
             alpha_str_logits = ", ".join([f"{w:.6f}" for w in new_weights_logits.tolist()])
             print(alpha_str_logits)
         
-        ###
-        c_vals_hidden = cost_values_hidden.detach().cpu().float().numpy()
-        n_hidden = len(c_vals_hidden) 
-        sigma = self.sigma
-        
-        alpha_hidden = cp.Variable(n_hidden)
-        objective_hidden = cp.Minimize(c_vals_hidden @ alpha_hidden + sigma * cp.sum_squares(alpha_hidden - 1/n_hidden))
-        constraints_hidden = [cp.sum(alpha_hidden) == 1, alpha_hidden >= 0.01]
-        
-        problem_hidden = cp.Problem(objective_hidden, constraints_hidden)
-        problem_hidden.solve(solver=cp.ECOS, verbose=False)
-        
-        if alpha_hidden.value is None:
-            print(f"Rank {dist.get_rank()}: CVXPY solver failed for cost_weights_hidden. Skipping update.")
-        else:
-            new_weights_hidden = torch.tensor(alpha_hidden.value, dtype=self.cost_weights_hidden.dtype, device=self.cost_weights_hidden.device)
-            with torch.no_grad():
-                self.cost_weights_hidden.copy_(new_weights_hidden)
-            alpha_str_hidden = ", ".join([f"{w:.6f}" for w in new_weights_hidden.tolist()])
-            print(alpha_str_hidden)
-
 
 
     def compute_dual_space_kd_loss_with_cma(

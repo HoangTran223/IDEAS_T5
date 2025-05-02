@@ -122,7 +122,6 @@ def finetune(
     ## ==> update after 50×4=200 minibatches
     update_interval = 50
     step_since_last_update = 0
-    cost_values_logits_buffer = []
     cost_values_hidden_buffer = []
 
     for epoch in range(args.num_epochs):
@@ -174,11 +173,9 @@ def finetune(
                 logging_output["micro_step_time"].append(elapsed_time)
 
                 # Add
-                # required_logits_keys = ["avg_c2_logits", "avg_c4_logits","avg_c_salience_logits"]
                 # required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last", "avg_c7_last"]
                 required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last"]
 
-                # if all(k in batch_logging_output for k in required_logits_keys + required_hidden_keys):
                 if all(k in batch_logging_output for k in required_hidden_keys):
                     def to_scalar(value):
                         if isinstance(value, (int, float)):
@@ -190,13 +187,6 @@ def finetune(
                         else:
                             raise ValueError(f"Invalid type for value: {type(value)}, value: {value}")
                     try:
-
-                        # cost_values_logits = [
-                        #     # to_scalar(batch_logging_output["avg_c1_last"]),
-                        #     to_scalar(batch_logging_output["avg_c2_logits"]),
-                        #     to_scalar(batch_logging_output["avg_c4_logits"]),
-                        #     to_scalar(batch_logging_output["avg_c_salience_logits"])
-                        # ]
                         cost_values_hidden = [
                             to_scalar(batch_logging_output["avg_c2_last"]),
                             to_scalar(batch_logging_output["avg_c5_last"]),
@@ -206,7 +196,6 @@ def finetune(
                     except ValueError as e:
                         logger.error(f"Failed to convert logging_output to scalar: {e}, values: {batch_logging_output}")
                         continue
-                    cost_values_logits_buffer.append(cost_values_logits)
                     cost_values_hidden_buffer.append(cost_values_hidden)
                 else:
                     print(f"Missing keys in batch_logging_output: {list(batch_logging_output.keys())}")
@@ -215,22 +204,14 @@ def finetune(
             step_since_last_update += 1
             if hasattr(criterion, "update_cost_weights") and step_since_last_update >= update_interval:
                 print(f"[DEBUG] Updating cost weights at global_step {global_step}")
-                if cost_values_logits_buffer and cost_values_hidden_buffer:
+                if cost_values_hidden_buffer:
                     expected_buffer_size = update_interval * args.gradient_accumulation_steps
-                    if len(cost_values_logits_buffer) != expected_buffer_size:
-                        print(f"Unexpected cost_values_logits_buffer size: {len(cost_values_logits_buffer)}, expected {expected_buffer_size}")
-                        cost_values_logits_buffer = []
-                        cost_values_hidden_buffer = []
-                        continue
 
-                    cost_values_logits = torch.tensor(cost_values_logits_buffer).mean(dim=0)
                     cost_values_hidden = torch.tensor(cost_values_hidden_buffer).mean(dim=0)
 
                     criterion.update_cost_weights(
-                            cost_values_logits=cost_values_logits.tolist(),
                             cost_values_hidden=cost_values_hidden.tolist()
                         )
-                    cost_values_logits_buffer = []
                     cost_values_hidden_buffer = []
 
                 step_since_last_update = 0

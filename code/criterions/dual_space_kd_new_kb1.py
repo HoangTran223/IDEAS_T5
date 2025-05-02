@@ -399,7 +399,7 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
         return loss, log
 
     
-    def update_cost_weights(self, cost_values_logits, cost_values_hidden):
+    def update_cost_weights(self, cost_values_hidden):
         def to_scalar_list(values):
             if isinstance(values, torch.Tensor):
                 values = values.tolist()
@@ -420,33 +420,9 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
             except (TypeError, ValueError) as e:
                 logger.error(f"Error converting to float: {e}, values: {values}")
                 return None
-        
-        cost_values_logits = to_scalar_list(cost_values_logits)
-        cost_values_logits = torch.tensor(cost_values_logits, dtype=self.dtype, device=self.device)
 
         cost_values_hidden = to_scalar_list(cost_values_hidden)
         cost_values_hidden = torch.tensor(cost_values_hidden, dtype=self.dtype, device=self.device)
-        
-        ###
-        c_vals_logits = cost_values_logits.detach().cpu().float().numpy()
-        n_logits = len(c_vals_logits)  
-        sigma = self.sigma
-        
-        alpha_logits = cp.Variable(n_logits)
-        objective_logits = cp.Minimize(c_vals_logits @ alpha_logits + sigma * cp.sum_squares(alpha_logits - 1/n_logits))
-        constraints_logits = [cp.sum(alpha_logits) == 1, alpha_logits >= 0.01]
-        
-        problem_logits = cp.Problem(objective_logits, constraints_logits)
-        problem_logits.solve(solver=cp.ECOS, verbose=False)
-        
-        if alpha_logits.value is None:
-            print(f"Rank {dist.get_rank()}: CVXPY solver failed for cost_weights_logits. Skipping update.")
-        else:
-            new_weights_logits = torch.tensor(alpha_logits.value, dtype=self.cost_weights_logits.dtype, device=self.cost_weights_logits.device)
-            with torch.no_grad():
-                self.cost_weights_logits.copy_(new_weights_logits)
-            alpha_str_logits = ", ".join([f"{w:.6f}" for w in new_weights_logits.tolist()])
-            print(alpha_str_logits)
         
         ###
         c_vals_hidden = cost_values_hidden.detach().cpu().float().numpy()

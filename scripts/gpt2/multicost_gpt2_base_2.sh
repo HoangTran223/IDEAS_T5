@@ -33,13 +33,13 @@ TEACHER_MODEL_PATH="/mnt/nam_x/tue_x/model_hub/qwen/Qwen1.5-1.8B"
 DATA_DIR="${BASE_PATH}/data/dolly/"
 
 # task
-TASK="dual_space_kd_with_cma_ot_kb3"
+TASK="dual_space_kd_with_cma_ot_kb2"
 
-BATCH_SIZE=2
+BATCH_SIZE=4
 LR=0.0004
 GRAD_ACC=2
 EVAL_BATCH_SIZE=2
-EPOCH=10
+EPOCH=20
 KD_RATE=2.5
 KD_TEMP=3.0
 
@@ -51,7 +51,7 @@ MAX_LENGTH=512
 # runtime
 PRECISION="bf16"
 # PRECISION="fp16"
-CRITERION="dual_space_kd_with_cma_ot_kb3"
+CRITERION="dual_space_kd_with_cma_ot_kb2"
 KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
 
 CONFIG="${KD_OBJ}-${PRECISION}"
@@ -59,7 +59,7 @@ SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_NAME}__kd^rat
 SAVE_PATH="${BASE_PATH}/outputs/${CKPT_TYPE}/${CKPT_NAME}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
-SEED=50
+SEED=10
 
 mkdir -p ${SAVE_PATH}
 
@@ -109,7 +109,7 @@ OPTS+=" --do-valid"
 OPTS+=" --eval-gen"
 
 # To load checkpoints, for example:
-# OPTS+=" --load /mnt/nam_x/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot_kb3/criterion=dual_space_kd_with_cma_ot_kb3__reverse_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.7__kd^temp=2.5__epoch=10__bsz=4x2x1=8__lr=0.0003__proj^lr=0.004/epoch1_step1429_loss7.7672_rougel26.1746"
+OPTS+=" --load /mnt/nam_x/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot_kb2/criterion=dual_space_kd_with_cma_ot_kb2__reverse_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.8__kd^temp=2.0__epoch=20__bsz=1x2x1=2__lr=0.0003__proj^lr=0.001/epoch3_step17151_loss7.8415_rougel25.7001"
 
 OPTS+=" --precision ${PRECISION}"
 OPTS+=" --save-interval 1"
@@ -147,8 +147,10 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation_kb3.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation_kb2.py ${OPTS}"
 
-${CMD}
-# ${CMD} \
+${CMD} \
 # >> ${SAVE_PATH}/train.log 2>&1 &
+
+
+
