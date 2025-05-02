@@ -26,17 +26,18 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         ## Add
+        # Tot nhat la 2.5, 10.0, 1.7, 300, 100.0, 100.0, 0.7 -> dc 19.5. 1000 thi te hon
+        # 2.5, 10.0, 1.7, 150, 100.0, 100.0, 0.7
         self.window_size = 4
         self.padding_id = padding_id
         self.ot_weight_logits = 100.0
         self.ot_weight_hidden = 100.0
         self.ce_ = 10.0
-        self.kd_rate = 5.0
+        self.kd_rate = 2.5 
         self.tau_seq = 1.7
-        self.top_k_vocab = 20
+        self.top_k_vocab = 300
         self.total_steps = args.total_iters
         self.current_step = 0
-        self.ngram_size = 3
         self.sigma = 0.7
         self._id_mapping_cache = None
 
@@ -47,7 +48,8 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         # self.etp = ETP_1()
         self.etp = ETP()
         self.cost_weights_logits = nn.Parameter(torch.tensor([0.2, 0.5, 0.3], dtype=self.dtype, device=self.device))
-        self.cost_weights_hidden = nn.Parameter(torch.tensor([0.3, 0.2, 0.3, 0.2], dtype=self.dtype, device=self.device))
+        # self.cost_weights_hidden = nn.Parameter(torch.tensor([0.3, 0.2, 0.3, 0.2], dtype=self.dtype, device=self.device))
+        self.cost_weights_hidden = nn.Parameter(torch.tensor([0.3, 0.5, 0.2], dtype=self.dtype, device=self.device))
 
 
     def forward(
@@ -85,11 +87,6 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
 
         loss_ce = self.compute_cross_entropy_loss(outputs.logits, output_data["label"], log=log)[0]
         log["loss_ce"] = loss_ce
-        
-        # kd_loss, log = self.compute_dual_space_kd_loss_with_cma(
-        #     outputs, teacher_outputs, input_data, output_data, distiller, log
-        # )
-        # log["kd_loss"] = kd_loss
 
         hidden_state_student = outputs.hidden_states[-1]  # (batch_size, seq_len_student, hidden_dim_student)
         # hidden_state_student_first = outputs.hidden_states[0]
@@ -125,53 +122,69 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         return total_loss / batch_denom, logging_output
         
 
-    def compute_ot_logits(self, distiller, student_logits, teacher_logits, student_mask, teacher_mask, student_outputs, teacher_outputs, log, t_start=0.2, t_end=1.0):
+    def compute_ot_logits(self, distiller, student_logits, teacher_logits, student_mask, teacher_mask, student_outputs, teacher_outputs, log, t_start=0.1, t_end=1.0):
         batch_size = student_logits.size(0)
         tau = self.tau_seq
         eps = 1e-7
+        k = self.top_k_vocab
 
         def normalize(value):
             means = value.mean(dim=-1, keepdim=True)
             stds = value.std(dim=-1, keepdim=True)
             return value / (stds + 0.0001)
 
-        student_logits = normalize(student_logits).to(self.dtype)
-        teacher_logits = normalize(teacher_logits).to(self.dtype)
+        # student_logits = normalize(student_logits).to(self.dtype)
+        # teacher_logits = normalize(teacher_logits).to(self.dtype)
 
-        student_probs = F.softmax(student_logits / tau, dim=-1)
-        teacher_probs = F.softmax(teacher_logits / tau, dim=-1)
+        # student_probs = F.softmax(student_logits / tau, dim=-1)
+        # teacher_probs = F.softmax(teacher_logits / tau, dim=-1)
 
-        min_vocab = min(student_probs.size(-1), teacher_probs.size(-1))
-        k = min(min_vocab, self.top_k_vocab)
+        # min_vocab = min(student_probs.size(-1), teacher_probs.size(-1))
+        # k = min(min_vocab, self.top_k_vocab)
 
-        student_prob_sums = student_probs.sum(dim=(0, 1))
-        teacher_prob_sums = teacher_probs.sum(dim=(0, 1))
+        # student_prob_sums = student_probs.sum(dim=(0, 1))
+        # teacher_prob_sums = teacher_probs.sum(dim=(0, 1))
 
-        _, student_topk_indices = torch.topk(student_prob_sums, k=k, dim=-1)
-        _, teacher_topk_indices = torch.topk(teacher_prob_sums[:min_vocab], k=k, dim=-1)
+        # _, student_topk_indices = torch.topk(student_prob_sums, k=k, dim=-1)
+        # _, teacher_topk_indices = torch.topk(teacher_prob_sums[:min_vocab], k=k, dim=-1)
 
-        selected_indices = student_topk_indices
+        # selected_indices = student_topk_indices
 
-        student_logits = student_logits[:, :, selected_indices]
-        teacher_logits = teacher_logits[:, :, selected_indices]
+        # student_logits = student_logits[:, :, selected_indices]
+        # teacher_logits = teacher_logits[:, :, selected_indices]
 
-        frac = self.current_step / self.total_steps
-        frac = min(frac, 1.0)               
+        # frac = self.current_step / self.total_steps
+        # frac = min(frac, 1.0)               
+        # t = t_start + (t_end - t_start) * frac
+        # # # t = min(self.current_step / self.total_steps, 1.0)
+        # # t = 0.5 * (1 - math.cos(math.pi * self.current_step / self.total_steps))
+        # interpolated_teacher_logits = (1 - t) * student_logits + t * teacher_logits
+
+        # student_probs = F.softmax(student_logits / tau, dim=-1)
+        # interpolated_teacher_probs = F.softmax(interpolated_teacher_logits / tau, dim=-1)
+
+        # def improved_sort(value):
+        #     sums = value.sum(dim=(0, 1))
+        #     sorted_indices = torch.argsort(sums, descending=True)
+        #     return value[:, :, sorted_indices]
+
+        # student_probs = improved_sort(student_probs)
+        # interpolated_teacher_probs = improved_sort(interpolated_teacher_probs)
+        # Step 2: Sort each logit vector and take top-k (per token position)
+        student_topk_logits, _ = student_logits.sort(dim=-1, descending=True)
+        teacher_topk_logits, _ = teacher_logits.sort(dim=-1, descending=True)
+
+        student_topk_logits = student_topk_logits[..., :k]
+        teacher_topk_logits = teacher_topk_logits[..., :k]
+
+        # Step 3: Interpolate teacher logits
+        frac = min(self.current_step / self.total_steps, 1.0)
         t = t_start + (t_end - t_start) * frac
-        # # t = min(self.current_step / self.total_steps, 1.0)
-        # t = 0.5 * (1 - math.cos(math.pi * self.current_step / self.total_steps))
-        interpolated_teacher_logits = (1 - t) * student_logits + t * teacher_logits
+        interpolated_teacher_logits = (1 - t) * student_topk_logits + t * teacher_topk_logits
 
-        student_probs = F.softmax(student_logits / tau, dim=-1)
+        # Step 4: Apply softmax with temperature
+        student_probs = F.softmax(student_topk_logits / tau, dim=-1)
         interpolated_teacher_probs = F.softmax(interpolated_teacher_logits / tau, dim=-1)
-
-        def improved_sort(value):
-            sums = value.sum(dim=(0, 1))
-            sorted_indices = torch.argsort(sums, descending=True)
-            return value[:, :, sorted_indices]
-
-        student_probs = improved_sort(student_probs)
-        interpolated_teacher_probs = improved_sort(interpolated_teacher_probs)
 
         total_loss = 0
         for b in range(batch_size):
@@ -254,9 +267,6 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
 
             C2 = (C_s2t.T + C_t2s) / 2
 
-            # C3
-            # C3 = torch.abs(student_seq.unsqueeze(0) - teacher_seq.unsqueeze(1)).sum(dim=-1)
-
             # C_contextual
             def compute_context_reprs(seq, window):
                 ctx = torch.zeros_like(seq)
@@ -283,101 +293,101 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
             cosine_sim = torch.einsum('md,nd->mn', ctx_t_norm.to(self.dtype), ctx_s_norm.to(self.dtype))
             C6 = 1 - cosine_sim 
 
-            # C_hybrid
-            def compute_ngram_overlap_cost(stu_tok, tea_tok, student_ids, teacher_ids, n=2):
-                stu_text = distiller.student_tokenizer.decode(student_ids, skip_special_tokens=True).lower()
-                tea_text = distiller.teacher_tokenizers[distiller.teacher_model_type].decode(teacher_ids, skip_special_tokens=True).lower()
+            # # C_hybrid
+            # def compute_ngram_overlap_cost(stu_tok, tea_tok, student_ids, teacher_ids, n=2):
+            #     stu_text = distiller.student_tokenizer.decode(student_ids, skip_special_tokens=True).lower()
+            #     tea_text = distiller.teacher_tokenizers[distiller.teacher_model_type].decode(teacher_ids, skip_special_tokens=True).lower()
                 
-                word_tokens_stu = stu_text.split()
-                word_tokens_tea = tea_text.split()
+            #     word_tokens_stu = stu_text.split()
+            #     word_tokens_tea = tea_text.split()
                 
-                stu_ngrams = set(tuple(word_tokens_stu[i:i+n]) for i in range(len(word_tokens_stu)-n+1))
-                tea_ngrams = set(tuple(word_tokens_tea[i:i+n]) for i in range(len(word_tokens_tea)-n+1))
-                common_ngrams = stu_ngrams & tea_ngrams
+            #     stu_ngrams = set(tuple(word_tokens_stu[i:i+n]) for i in range(len(word_tokens_stu)-n+1))
+            #     tea_ngrams = set(tuple(word_tokens_tea[i:i+n]) for i in range(len(word_tokens_tea)-n+1))
+            #     common_ngrams = stu_ngrams & tea_ngrams
                 
-                if self._id_mapping_cache is None:
-                    tea2stu_id_mapping = {}
-                    # Use tea2stu_token_mapping if available
-                    if hasattr(distiller, 'tea2stu_token_mapping'):
-                        for t_tok, s_tok in distiller.tea2stu_token_mapping.items():
-                            t_id = distiller.teacher_tokenizers[distiller.teacher_model_type].convert_tokens_to_ids(t_tok)
-                            s_id = distiller.student_tokenizer.convert_tokens_to_ids(s_tok)
-                            if t_id is not None and s_id is not None:
-                                tea2stu_id_mapping[str(t_id)] = s_id
-                    # Add direct token-to-id mapping
-                    for t_id in set(teacher_ids):
-                        t_tok = distiller.teacher_tokenizers[distiller.teacher_model_type].convert_ids_to_tokens(t_id)
-                        s_id = distiller.student_tokenizer.convert_tokens_to_ids(t_tok)
-                        if s_id is not None:
-                            tea2stu_id_mapping[str(t_id)] = s_id
-                    self._id_mapping_cache = tea2stu_id_mapping
+            #     if self._id_mapping_cache is None:
+            #         tea2stu_id_mapping = {}
+            #         # Use tea2stu_token_mapping if available
+            #         # if hasattr(distiller, 'tea2stu_token_mapping'):
+            #         #     for t_tok, s_tok in distiller.tea2stu_token_mapping.items():
+            #         #         t_id = distiller.teacher_tokenizers[distiller.teacher_model_type].convert_tokens_to_ids(t_tok)
+            #         #         s_id = distiller.student_tokenizer.convert_tokens_to_ids(s_tok)
+            #         #         if t_id is not None and s_id is not None:
+            #         #             tea2stu_id_mapping[str(t_id)] = s_id
+            #         # Add direct token-to-id mapping
+            #         for t_id in set(teacher_ids):
+            #             t_tok = distiller.teacher_tokenizers[distiller.teacher_model_type].convert_ids_to_tokens(t_id)
+            #             s_id = distiller.student_tokenizer.convert_tokens_to_ids(t_tok)
+            #             if s_id is not None:
+            #                 tea2stu_id_mapping[str(t_id)] = s_id
+            #         self._id_mapping_cache = tea2stu_id_mapping
                 
-                # Use cached mapping
-                C_ngram = torch.ones((N, M), device=student_seq.device)
-                for i, s_id in enumerate(student_ids):
-                    for j, t_id in enumerate(teacher_ids):
-                        t_id_str = str(t_id)
-                        if t_id_str in self._id_mapping_cache and self._id_mapping_cache[t_id_str] == s_id:
-                            # Check n-gram overlap for aligned tokens
-                            stu_text_pos = stu_text
-                            tea_text_pos = tea_text
-                            for ngram in common_ngrams:
-                                ngram_str = ' '.join(ngram)
-                                if ngram_str in stu_text_pos and ngram_str in tea_text_pos:
-                                    C_ngram[i, j] = 0
-                                    stu_text_pos = stu_text_pos.replace(ngram_str, '', 1)
-                                    tea_text_pos = tea_text_pos.replace(ngram_str, '', 1)
-                                    break
-                # Fallback to word-level mapping if no mapping
-                if not self._id_mapping_cache:
-                    stu_word_map = {}
-                    tea_word_map = {}
-                    word_idx = 0
-                    stu_idx = 0
-                    tea_idx = 0
-                    stu_text_remaining = stu_text.replace('##', '')
-                    tea_text_remaining = tea_text.replace('##', '')
+            #     # Use cached mapping
+            #     C_ngram = torch.ones((N, M), device=student_seq.device)
+            #     for i, s_id in enumerate(student_ids):
+            #         for j, t_id in enumerate(teacher_ids):
+            #             t_id_str = str(t_id)
+            #             if t_id_str in self._id_mapping_cache and self._id_mapping_cache[t_id_str] == s_id:
+            #                 # Check n-gram overlap for aligned tokens
+            #                 stu_text_pos = stu_text
+            #                 tea_text_pos = tea_text
+            #                 for ngram in common_ngrams:
+            #                     ngram_str = ' '.join(ngram)
+            #                     if ngram_str in stu_text_pos and ngram_str in tea_text_pos:
+            #                         C_ngram[i, j] = 0
+            #                         stu_text_pos = stu_text_pos.replace(ngram_str, '', 1)
+            #                         tea_text_pos = tea_text_pos.replace(ngram_str, '', 1)
+            #                         break
+            #     # Fallback to word-level mapping if no mapping
+            #     if not self._id_mapping_cache:
+            #         stu_word_map = {}
+            #         tea_word_map = {}
+            #         word_idx = 0
+            #         stu_idx = 0
+            #         tea_idx = 0
+            #         stu_text_remaining = stu_text.replace('##', '')
+            #         tea_text_remaining = tea_text.replace('##', '')
                     
-                    for word in word_tokens_stu:
-                        while stu_idx < len(stu_tok) and word in stu_text_remaining:
-                            stu_word_map[stu_idx] = word_idx
-                            stu_text_remaining = stu_text_remaining.replace(word, '', 1)
-                            stu_idx += 1
-                        word_idx += 1
-                    word_idx = 0
-                    for word in word_tokens_tea:
-                        while tea_idx < len(tea_tok) and word in tea_text_remaining:
-                            tea_word_map[tea_idx] = word_idx
-                            tea_text_remaining = tea_text_remaining.replace(word, '', 1)
-                            tea_idx += 1
-                        word_idx += 1
+            #         for word in word_tokens_stu:
+            #             while stu_idx < len(stu_tok) and word in stu_text_remaining:
+            #                 stu_word_map[stu_idx] = word_idx
+            #                 stu_text_remaining = stu_text_remaining.replace(word, '', 1)
+            #                 stu_idx += 1
+            #             word_idx += 1
+            #         word_idx = 0
+            #         for word in word_tokens_tea:
+            #             while tea_idx < len(tea_tok) and word in tea_text_remaining:
+            #                 tea_word_map[tea_idx] = word_idx
+            #                 tea_text_remaining = tea_text_remaining.replace(word, '', 1)
+            #                 tea_idx += 1
+            #             word_idx += 1
 
-                    for i in range(N):
-                        for j in range(M):
-                            if i in stu_word_map and j in tea_word_map:
-                                stu_word_idx = stu_word_map[i]
-                                tea_word_idx = tea_word_map[j]
-                                if stu_word_idx < len(word_tokens_stu) and tea_word_idx < len(word_tokens_tea):
-                                    for ngram in common_ngrams:
-                                        if (word_tokens_stu[stu_word_idx] in ngram and
-                                            word_tokens_tea[tea_word_idx] in ngram):
-                                            C_ngram[i, j] = 0
-                                            break
-                C_ngram = C_ngram / (C_ngram.max() + eps)
-                return C_ngram.T
+            #         for i in range(N):
+            #             for j in range(M):
+            #                 if i in stu_word_map and j in tea_word_map:
+            #                     stu_word_idx = stu_word_map[i]
+            #                     tea_word_idx = tea_word_map[j]
+            #                     if stu_word_idx < len(word_tokens_stu) and tea_word_idx < len(word_tokens_tea):
+            #                         for ngram in common_ngrams:
+            #                             if (word_tokens_stu[stu_word_idx] in ngram and
+            #                                 word_tokens_tea[tea_word_idx] in ngram):
+            #                                 C_ngram[i, j] = 0
+            #                                 break
+            #     C_ngram = C_ngram / (C_ngram.max() + eps)
+            #     return C_ngram.T
             
-            C7 = compute_ngram_overlap_cost(stu_tok, tea_tok, student_ids, teacher_ids, n=2)
+            # C7 = compute_ngram_overlap_cost(stu_tok, tea_tok, student_ids, teacher_ids, n=2)
 
-            cost_matrices = [C2, C5, C6, C7]
+            # cost_matrices = [C2, C5, C6, C7]
+            cost_matrices = [C2, C5, C6]
             for i, C in enumerate(cost_matrices):
                 if C.shape != cost_matrices[0].shape:
                     raise ValueError(f"Cost matrix {i} has shape {C.shape}, expected {cost_matrices[0].shape}")
             weights = self.cost_weights_hidden
             log["avg_c2_last"] = C2.mean().item()
-            # log["avg_c3_last"] = C3.mean().item()
             log["avg_c5_last"] = C5.mean().item()
             log["avg_c6_last"] = C6.mean().item()
-            log["avg_c7_last"] = C7.mean().item()
+            # log["avg_c7_last"] = C7.mean().item()
 
             total_cost = sum(w * C for w, C in zip(weights, cost_matrices))
             total_cost = total_cost.to(dtype=self.dtype)
@@ -541,11 +551,7 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         tea_v_hiddens = distiller.projectors["t2s"](
             (norm_teacher_hiddens + norm_tea_target_embeds).to(self.dtype)
         )
-        # print(f"stu_q_hiddens shape: {stu_q_hiddens.shape}, dtype: {stu_q_hiddens.dtype}")
-        # print(f"tea_k_hiddens shape: {tea_k_hiddens.shape}, dtype: {tea_k_hiddens.dtype}")
-        # print(f"stu_v_hiddens shape: {stu_v_hiddens.shape}, dtype: {stu_v_hiddens.dtype}")
-        # print(f"tea_v_hiddens shape: {tea_v_hiddens.shape}, dtype: {tea_v_hiddens.dtype}")
-        
+
         # align = stu_q_hiddens.matmul(tea_k_hiddens.transpose(-1, -2))
         align = stu_q_hiddens.matmul(tea_k_hiddens.transpose(-1, -2)).to(self.dtype)
         align = align / math.sqrt(2 * teacher_hiddens.shape[-1])
@@ -598,11 +604,10 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
             s2t_acc = (s2t_logits.argmax(-1).eq(teacher_target) * teacher_pad_mask).sum() * pad_mask.sum() / teacher_pad_mask.sum()
 
             kd_loss = t2s_ce_loss + t2s_kd_loss + s2t_kd_loss
+            # kd_loss = t2s_kd_loss + s2t_kd_loss
             log["t2s_kd_loss"] = t2s_kd_loss
             log["s2t_kd_loss"] = s2t_kd_loss
             log["s2t_acc"] = s2t_acc
-        else:
-            kd_loss = t2s_ce_loss
 
         log["kd_loss"] = kd_loss
         return kd_loss, log
@@ -643,7 +648,7 @@ def dtw_alignment(series_1, series_2, norm_func=dist_fn_edit):
 
 
 def pairwise_euclidean_distance(x, y):
-    return torch.cdist(x, y, p=2)  # Computes pairwise Euclidean distance
+    return torch.cdist(x, y, p=2) 
 
 def pairwise_cosin_distance(a, b, eps=1e-8):
     # a = a.float()

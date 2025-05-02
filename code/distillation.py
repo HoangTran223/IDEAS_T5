@@ -120,7 +120,7 @@ def finetune(
     ## Add
     ## gradient_accumulation_steps=4, update_interval=50, 
     ## ==> update after 50×4=200 minibatches
-    update_interval = 200
+    update_interval = 50
     step_since_last_update = 0
     cost_values_logits_buffer = []
     cost_values_hidden_buffer = []
@@ -175,7 +175,8 @@ def finetune(
 
                 # Add
                 required_logits_keys = ["avg_c2_logits", "avg_c4_logits","avg_c_salience_logits"]
-                required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last", "avg_c7_last"]
+                # required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last", "avg_c7_last"]
+                required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last"]
 
                 if all(k in batch_logging_output for k in required_logits_keys + required_hidden_keys):
                     def to_scalar(value):
@@ -198,8 +199,8 @@ def finetune(
                         cost_values_hidden = [
                             to_scalar(batch_logging_output["avg_c2_last"]),
                             to_scalar(batch_logging_output["avg_c5_last"]),
-                            to_scalar(batch_logging_output["avg_c6_last"]),
-                            to_scalar(batch_logging_output["avg_c7_last"])
+                            to_scalar(batch_logging_output["avg_c6_last"])
+                            # to_scalar(batch_logging_output["avg_c7_last"])
                         ]
                     except ValueError as e:
                         logger.error(f"Failed to convert logging_output to scalar: {e}, values: {batch_logging_output}")

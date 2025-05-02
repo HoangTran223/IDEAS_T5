@@ -35,17 +35,17 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot_kb3"
 
-BATCH_SIZE=4
-LR=0.002
+BATCH_SIZE=2
+LR=0.0004
 GRAD_ACC=2
 EVAL_BATCH_SIZE=2
 EPOCH=10
-KD_RATE=3.0
+KD_RATE=2.5
 KD_TEMP=3.0
 
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.004
+PROJECTOR_LR=0.002
 # length
 MAX_LENGTH=512
 # runtime
@@ -109,7 +109,7 @@ OPTS+=" --do-valid"
 OPTS+=" --eval-gen"
 
 # To load checkpoints, for example:
-OPTS+=" --load /mnt/nam_x/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot_kb3/criterion=dual_space_kd_with_cma_ot_kb3__reverse_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.7__kd^temp=2.5__epoch=10__bsz=4x2x1=8__lr=0.0003__proj^lr=0.004/epoch1_step1429_loss7.7672_rougel26.1746"
+# OPTS+=" --load /mnt/nam_x/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot_kb3/criterion=dual_space_kd_with_cma_ot_kb3__reverse_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.7__kd^temp=2.5__epoch=10__bsz=4x2x1=8__lr=0.0003__proj^lr=0.004/epoch1_step1429_loss7.7672_rougel26.1746"
 
 OPTS+=" --precision ${PRECISION}"
 OPTS+=" --save-interval 1"
