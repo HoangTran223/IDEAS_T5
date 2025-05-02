@@ -42,8 +42,8 @@ def add_model_args(parser: argparse.ArgumentParser):
     # Add
     group.add_argument("--hidden-dim-student", type=int, default=768)
     group.add_argument("--top_k_vocab", type=int, default=300)
-    group.add_argument("--ot_weight_logits", type=float, default=50.0)
-    group.add_argument("--ot_weight_hidden", type=float, default=10.0)
+    group.add_argument("--ot_weight_logits", type=float, default=100.0)
+    group.add_argument("--ot_weight_hidden", type=float, default=100.0)
     group.add_argument("--ce_weight", type=float, default=10.0)
 
     group.add_argument("--hidden-dim-teacher", type=int, default=2048)
