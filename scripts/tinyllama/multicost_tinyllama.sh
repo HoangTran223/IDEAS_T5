@@ -36,7 +36,7 @@ BATCH_SIZE=8
 LR=0.0005
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
-EPOCH=20
+EPOCH=15
 KD_RATE=3.0
 KD_TEMP=3.0
 LORA_RANK=256
@@ -134,7 +134,7 @@ OPTS+=" --proj_dim 256"
 OPTS+=" --top_k_vocab 300"
 OPTS+=" --ot_weight_logits 100.0"  
 OPTS+=" --ot_weight_hidden 100.0"
-OPTS+=" --ce_weight 12.0"
+OPTS+=" --ce_weight 10.0"
 
 
 # seed
