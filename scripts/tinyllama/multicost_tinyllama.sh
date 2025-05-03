@@ -123,9 +123,9 @@ OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
 # add
-# KB1: --ot_weight_logits 2.0   --ot_weight_hidden 0.5  --ce_weight 2.0 KD_RATE = 2.5  KD_OBJ="forward_kl"
-# KB2: --ot_weight_logits 120.0  --ot_weight_hidden 1.0  --ce_weight 10.0 KD_RATE = 2.5  KD_OBJ="forward_kl"
-# KB3: --ot_weight_logits 150.0  --ot_weight_hidden 80.0  --ce_weight 10.0 KD_RATE = 3.5  KD_OBJ="reverse_kl"
+# KB1: --ot_weight_logits 2.0   --ot_weight_hidden 0.1  --ce_weight 0.2 KD_RATE = 0.8 KD_OBJ="adaptive_kl"
+# KB2: --ot_weight_logits 100.0  --ot_weight_hidden 1.0  --ce_weight 0.1 KD_RATE = 0.9  KD_OBJ="forward_kl"
+# KB3: --ot_weight_logits 10.0  --ot_weight_hidden 0.5  --ce_weight 1.0 KD_RATE = 5.0  KD_OBJ="adaptive_kl"
 OPTS+=" --hidden-dim-student 768"
 OPTS+=" --hidden-dim-teacher 2048"
 OPTS+=" --max-student-len 512"
