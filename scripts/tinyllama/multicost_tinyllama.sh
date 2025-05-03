@@ -32,9 +32,9 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 
 # task
 TASK="dual_space_kd_with_cma_ot"
-BATCH_SIZE=8
-LR=0.0005
-GRAD_ACC=2
+BATCH_SIZE=32
+LR=0.001
+GRAD_ACC=1
 EVAL_BATCH_SIZE=16
 EPOCH=15
 KD_RATE=3.0
@@ -47,7 +47,7 @@ MAX_LENGTH=512
 
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.002
+PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
 CRITERION="dual_space_kd_with_cma_ot"
@@ -123,11 +123,12 @@ OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
 # add
-# KB1: --ot_weight_logits 100.0  --ot_weight_hidden 100.0   --ce_weight 10.0   KD_RATE=2.5   KD_OBJ="reverse_kl"
-# KB2: --ot_weight_logits 1.0    --ot_weight_hidden 1.0     --ce_weight 0.1    KD_RATE=0.9   KD_OBJ="reverse_kl"
-# KB3: --ot_weight_logits 100.0  --ot_weight_hidden 100.0   --ce_weight 0.5    KD_RATE=5.0   KD_OBJ="adaptive_kl"
-# KB4: --ot_weight_logits 1.0    --ot_weight_hidden 1.0     --ce_weight 0.1    KD_RATE=0.9   KD_OBJ="adaptive_kl"
-# KB5: --ot_weight_logits 50.0   --ot_weight_hidden 50.0    --ce_weight 10.0   KD_RATE=8.0   KD_OBJ="adaptive_kl"
+# KB1: --ot_weight_logits 100.0   --ot_weight_hidden 100.0   --ce_weight 10.0   KD_RATE=2.5   KD_OBJ="reverse_kl"
+# KB2: --ot_weight_logits 1.0     --ot_weight_hidden 1.0     --ce_weight 0.1    KD_RATE=0.9   KD_OBJ="reverse_kl"
+# KB3: --ot_weight_logits 100.0   --ot_weight_hidden 100.0   --ce_weight 0.5    KD_RATE=5.0   KD_OBJ="adaptive_kl"
+# KB4: --ot_weight_logits 1.0     --ot_weight_hidden 1.0     --ce_weight 0.1    KD_RATE=0.9   KD_OBJ="adaptive_kl"
+# KB5: --ot_weight_logits 50.0    --ot_weight_hidden 50.0    --ce_weight 10.0   KD_RATE=8.0   KD_OBJ="adaptive_kl"
+# KB6: --ot_weight_logits 100.0   --ot_weight_hidden 100.0   --ce_weight 10.0   KD_RATE=3.0   KD_OBJ="adaptive_kl"   
 OPTS+=" --hidden-dim-student 768"
 OPTS+=" --hidden-dim-teacher 2048"
 OPTS+=" --max-student-len 512"
