@@ -34,7 +34,7 @@ class DualSpaceKDWithCMA_OT(VariousDivergence):
         self.ot_weight_hidden = args.ot_weight_hidden
         self.ce_ = args.ce_weight
         self.kd_rate = args.kd_rate
-        self.tau_seq = 1.7
+        self.tau_seq = 2.0
         self.top_k_vocab = args.top_k_vocab
         self.total_steps = args.total_iters
         self.current_step = 0
