@@ -33,18 +33,17 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot"
 BATCH_SIZE=16
-LR=0.0005
+LR=0.001
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
-EPOCH=10
-KD_RATE=8.0
+EPOCH=15
+KD_RATE=0.9
 KD_TEMP=3.0
 LORA_RANK=256
 LORA_ALPHA=8
 LORA_DROPOUT=0.1
 # length
 MAX_LENGTH=512
-
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
 PROJECTOR_LR=0.001
@@ -122,18 +121,15 @@ OPTS+=" --save-dir ${SAVE_PATH}"
 OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
-# add
-# KB5: --ot_weight_logits 100.0    --ot_weight_hidden 100.0    --ce_weight 0.5   KD_RATE=10.0   KD_OBJ="adaptive_kl"
-# KB6: --ot_weight_logits 100.0   --ot_weight_hidden 100.0   --ce_weight 10.0   KD_RATE=3.0   KD_OBJ="adaptive_kl"   
 OPTS+=" --hidden-dim-student 2048"
 OPTS+=" --hidden-dim-teacher 4096"
 OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 2048"
 OPTS+=" --top_k_vocab 300"
-OPTS+=" --ot_weight_logits 100.0"  
-OPTS+=" --ot_weight_hidden 100.0"
-OPTS+=" --ce_weight 0.5"
+OPTS+=" --ot_weight_logits 0.1"  
+OPTS+=" --ot_weight_hidden 0.1"
+OPTS+=" --ce_weight 0.1"
 
 
 # seed

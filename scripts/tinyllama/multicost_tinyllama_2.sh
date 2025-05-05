@@ -1,4 +1,4 @@
-﻿#! /bin/bash
+#! /bin/bash
 GPUS=(0 1 2 3)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
@@ -31,27 +31,26 @@ TEACHER_PEFT_PATH="path_to_teacher_sft_ckpt"
 DATA_DIR="${BASE_PATH}/data/dolly/"
 
 # task
-TASK="dual_space_kd_with_cma_ot_kb2"
-BATCH_SIZE=4
-LR=0.0004
+TASK="dual_space_kd_with_cma_ot"
+BATCH_SIZE=16
+LR=0.001
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
-EPOCH=20
-KD_RATE=2.5 
+EPOCH=15
+KD_RATE=10.0
 KD_TEMP=3.0
 LORA_RANK=256
 LORA_ALPHA=8
 LORA_DROPOUT=0.1
 # length
 MAX_LENGTH=512
-
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.002
+PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
-CRITERION="dual_space_kd_with_cma_ot_kb2"
-KD_OBJ="forward_kl"  # [reverse_kl]
+CRITERION="dual_space_kd_with_cma_ot"
+KD_OBJ="adaptive_kl"  # [reverse_kl, adaptive_kl]
 
 CONFIG="${KD_OBJ}-lora-rank=${LORA_RANK}-alpha=${LORA_ALPHA}-dropout=${LORA_DROPOUT}-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_TYPE}__kd^rate=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
@@ -122,16 +121,17 @@ OPTS+=" --save-dir ${SAVE_PATH}"
 OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
-# Add
-OPTS+=" --hidden-dim-student 768"
-OPTS+=" --hidden-dim-teacher 2048"
+ 
+OPTS+=" --hidden-dim-student 2048"
+OPTS+=" --hidden-dim-teacher 4096"
 OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
-OPTS+=" --proj_dim 256"
+OPTS+=" --proj_dim 2048"
 OPTS+=" --top_k_vocab 300"
-OPTS+=" --ot_weight_logits 50.0"  
-OPTS+=" --ot_weight_hidden 10.0"
-OPTS+=" --ce_weight 10.0"
+OPTS+=" --ot_weight_logits 1.0"  
+OPTS+=" --ot_weight_hidden 1.0"
+OPTS+=" --ce_weight 0.2"
+
 
 # seed
 OPTS+=" --seed ${SEED}"
@@ -155,7 +155,7 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation_kb2.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation.py ${OPTS}"
 
 ${CMD} \
 >> ${SAVE_PATH}/train.log 2>&1 &
