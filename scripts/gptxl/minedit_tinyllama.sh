@@ -16,43 +16,35 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=path_to_dskd_project
-
 CKPT_TYPE="tinyllama"
 CKPT_NAME="tinyllama-1.1b-3T"
-
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_TYPE}/${CKPT_NAME}"
-
 TEACHER_MODEL_TYPE="mistral"
 TEACHER_MODEL_NAME="mistral-7b-v0.1"
 TEACHER_MODEL_PATH="${BASE_PATH}/model_hub/${TEACHER_MODEL_TYPE}/${TEACHER_MODEL_NAME}"
-TEACHER_PEFT_PATH="path_to_teacher_sft_ckpt"
-
+TEACHER_PEFT_PATH="path_to_teacher_sft_lora_ckpt"
 # data
 DATA_DIR="${BASE_PATH}/data/dolly/"
-
 # task
-TASK="dual_space_kd_with_cma_ot"
-BATCH_SIZE=16
-LR=0.0005
+TASK="min_edit"
+# hp
+BATCH_SIZE=4
+LR=0.001
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
-EPOCH=15
-KD_RATE=5.0
-KD_TEMP=3.0
+EPOCH=10
+KD_RATE=0.5
+KD_TEMP=2.0
 LORA_RANK=256
 LORA_ALPHA=8
 LORA_DROPOUT=0.1
 # length
 MAX_LENGTH=512
-# distiller
-PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
-CRITERION="dual_space_kd_with_cma_ot"
-KD_OBJ="adaptive_kl"  # [reverse_kl, adaptive_kl]
-
-CONFIG="${KD_OBJ}-lora-rank=${LORA_RANK}-alpha=${LORA_ALPHA}-dropout=${LORA_DROPOUT}-${PRECISION}"
+CRITERION="min_edit_dis_kld"
+TEA2STU_ID_MAP="${BASE_PATH}/data/vocab_alignment/mistral_to_tinyllama/tea2stu_id_mapping.json"
+CONFIG="lora-rank=${LORA_RANK}-alpha=${LORA_ALPHA}-dropout=${LORA_DROPOUT}-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_TYPE}__kd^rate=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
 SAVE_PATH="${BASE_PATH}/outputs/${CKPT_TYPE}/${CKPT_NAME}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
@@ -71,13 +63,13 @@ OPTS+=" --teacher-model-path ${TEACHER_MODEL_PATH}"
 OPTS+=" --teacher-peft-path ${TEACHER_PEFT_PATH}"
 OPTS+=" --teacher-model-fp16"
 OPTS+=" --gradient-checkpointing"
-
 # data
 OPTS+=" --data-dir ${DATA_DIR}"
 OPTS+=" --num-workers 0"
 OPTS+=" --dev-num 1000"
 # task
 OPTS+=" --task ${TASK}"
+OPTS+=" --teacher-to-student-id-mapping ${TEA2STU_ID_MAP}"
 # hp
 OPTS+=" --lr ${LR}"
 OPTS+=" --batch-size ${BATCH_SIZE}"
@@ -90,49 +82,23 @@ OPTS+=" --clip-grad 1.0"
 OPTS+=" --num-epochs ${EPOCH}"
 OPTS+=" --kd-rate ${KD_RATE}"
 OPTS+=" --kd-temperature ${KD_TEMP}"
-OPTS+=" --kd-objective ${KD_OBJ}"
 OPTS+=" --peft lora"
 OPTS+=" --peft-lora-r ${LORA_RANK}"
 OPTS+=" --peft-lora-alpha ${LORA_ALPHA}"
 OPTS+=" --peft-lora-dropout ${LORA_DROPOUT}"
-
-# distiller
-OPTS+=" --projector-lr ${PROJECTOR_LR}"
-OPTS+=" --projector-config-path ${PROJECTOR_CONFIG_PATH}"
-# OPTS+=" --projector-path ${PROJECTOR_PATH}"
-
 # length
 OPTS+=" --max-length ${MAX_LENGTH}"
 OPTS+=" --max-prompt-length 256"
-
 # runtime
 OPTS+=" --do-train"
 OPTS+=" --do-valid"
 OPTS+=" --eval-gen"
-
-# To load checkpoints, for example:
-# OPTS+=" --load /home/mcn/tue_x/DSKD/outputs/gpt2/gpt2-base/dual_space_kd_with_cma_ot/criterion=dual_space_kd_with_cma_ot__forward_kl-bf16__teacher=Qwen1.5-1.8B__kd^rate=0.5__kd^temp=2.0__epoch=10__bsz=2x4x1=8__lr=0.0005__proj^lr=0.001/epoch7_step10003_loss5.4078_rougel24.6491"
-
-OPTS+=" --precision ${PRECISION}"
 OPTS+=" --save-interval 1"
 OPTS+=" --eval-interval 1"
 OPTS+=" --log-interval 50"
 OPTS+=" --save-dir ${SAVE_PATH}"
 OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
-
- 
-OPTS+=" --hidden-dim-student 2048"
-OPTS+=" --hidden-dim-teacher 4096"
-OPTS+=" --max-student-len 512"
-OPTS+=" --max-teacher-len 512"
-OPTS+=" --proj_dim 2048"
-OPTS+=" --top_k_vocab 500"
-OPTS+=" --ot_weight_logits 100.0"  
-OPTS+=" --ot_weight_hidden 100.0"
-OPTS+=" --ce_weight 0.5"
-
-
 # seed
 OPTS+=" --seed ${SEED}"
 # deepspeed

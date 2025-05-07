@@ -33,11 +33,11 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot"
 BATCH_SIZE=16
-LR=0.001
+LR=0.0005
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=15
-KD_RATE=0.9
+KD_RATE=5.0
 KD_TEMP=3.0
 LORA_RANK=256
 LORA_ALPHA=8
@@ -50,14 +50,14 @@ PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
 CRITERION="dual_space_kd_with_cma_ot"
-KD_OBJ="adaptive_kl"  # [reverse_kl, adaptive_kl]
+KD_OBJ="reverse_kl"  # [reverse_kl, adaptive_kl]
 
 CONFIG="${KD_OBJ}-lora-rank=${LORA_RANK}-alpha=${LORA_ALPHA}-dropout=${LORA_DROPOUT}-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_TYPE}__kd^rate=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
 SAVE_PATH="${BASE_PATH}/outputs/${CKPT_TYPE}/${CKPT_NAME}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
-SEED=20
+SEED=10
 
 mkdir -p ${SAVE_PATH}
 
@@ -126,10 +126,10 @@ OPTS+=" --hidden-dim-teacher 4096"
 OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 2048"
-OPTS+=" --top_k_vocab 300"
-OPTS+=" --ot_weight_logits 0.1"  
-OPTS+=" --ot_weight_hidden 0.1"
-OPTS+=" --ce_weight 0.1"
+OPTS+=" --top_k_vocab 500"
+OPTS+=" --ot_weight_logits 100.0"  
+OPTS+=" --ot_weight_hidden 100.0"
+OPTS+=" --ce_weight 0.5"
 
 
 # seed

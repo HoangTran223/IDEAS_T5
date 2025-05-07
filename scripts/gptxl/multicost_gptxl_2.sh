@@ -17,15 +17,16 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 # model
 BASE_PATH=path_to_dskd_project
 
-CKPT_TYPE="tinyllama"
-CKPT_NAME="tinyllama-1.1b-3T"
+CKPT_TYPE="gpt2"
+CKPT_NAME="gpt2-xl"
 
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_TYPE}/${CKPT_NAME}"
+TEACHER_MODEL_TYPE="qwen"  # gpt2, qwen, mistral, llama2
+TEACHER_MODEL_NAME="Qwen2.5-7B-Instruct"
 
-TEACHER_MODEL_TYPE="mistral"
-TEACHER_MODEL_NAME="mistral-7b-v0.1"
 TEACHER_MODEL_PATH="${BASE_PATH}/model_hub/${TEACHER_MODEL_TYPE}/${TEACHER_MODEL_NAME}"
 TEACHER_PEFT_PATH="path_to_teacher_sft_ckpt"
+
 
 # data
 DATA_DIR="${BASE_PATH}/data/dolly/"

@@ -17,13 +17,13 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 # model
 BASE_PATH=path_to_dskd_project
 
-CKPT_TYPE="tinyllama"
-CKPT_NAME="tinyllama-1.1b-3T"
+CKPT_TYPE="gpt2"
+CKPT_NAME="gpt2-xl"
 
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_TYPE}/${CKPT_NAME}"
+TEACHER_MODEL_TYPE="qwen"  # gpt2, qwen, mistral, llama2
+TEACHER_MODEL_NAME="Qwen2.5-7B-Instruct"
 
-TEACHER_MODEL_TYPE="mistral"
-TEACHER_MODEL_NAME="mistral-7b-v0.1"
 TEACHER_MODEL_PATH="${BASE_PATH}/model_hub/${TEACHER_MODEL_TYPE}/${TEACHER_MODEL_NAME}"
 TEACHER_PEFT_PATH="path_to_teacher_sft_ckpt"
 
@@ -33,7 +33,7 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot"
 BATCH_SIZE=16
-LR=0.0005
+LR=0.001
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=15
@@ -44,6 +44,7 @@ LORA_ALPHA=8
 LORA_DROPOUT=0.1
 # length
 MAX_LENGTH=512
+
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
 PROJECTOR_LR=0.001
@@ -121,15 +122,15 @@ OPTS+=" --save-dir ${SAVE_PATH}"
 OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
- 
+# add
 OPTS+=" --hidden-dim-student 2048"
 OPTS+=" --hidden-dim-teacher 4096"
 OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 2048"
 OPTS+=" --top_k_vocab 500"
-OPTS+=" --ot_weight_logits 100.0"  
-OPTS+=" --ot_weight_hidden 100.0"
+OPTS+=" --ot_weight_logits 0.1"  
+OPTS+=" --ot_weight_hidden 0.1"
 OPTS+=" --ce_weight 0.5"
 
 
