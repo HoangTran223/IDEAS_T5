@@ -33,11 +33,11 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot"
 BATCH_SIZE=16
-LR=0.001
+LR=0.0005
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=15
-KD_RATE=5.0
+KD_RATE=0.7
 KD_TEMP=3.0
 LORA_RANK=256
 LORA_ALPHA=8
@@ -123,15 +123,15 @@ OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
 # add
-OPTS+=" --hidden-dim-student 2048"
+OPTS+=" --hidden-dim-student 1600"
 OPTS+=" --hidden-dim-teacher 4096"
 OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
-OPTS+=" --proj_dim 2048"
+OPTS+=" --proj_dim 1600"
 OPTS+=" --top_k_vocab 500"
-OPTS+=" --ot_weight_logits 0.1"  
-OPTS+=" --ot_weight_hidden 0.1"
-OPTS+=" --ce_weight 0.5"
+OPTS+=" --ot_weight_logits 0.0"  
+OPTS+=" --ot_weight_hidden 0.0"
+OPTS+=" --ce_weight 0.3"
 
 
 # seed

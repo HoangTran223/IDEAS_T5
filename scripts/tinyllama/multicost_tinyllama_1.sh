@@ -33,7 +33,7 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot"
 BATCH_SIZE=16
-LR=0.001
+LR=0.0005
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=15
@@ -129,8 +129,8 @@ OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 2048"
 OPTS+=" --top_k_vocab 500"
-OPTS+=" --ot_weight_logits 0.1"  
-OPTS+=" --ot_weight_hidden 0.1"
+OPTS+=" --ot_weight_logits 150.0"  
+OPTS+=" --ot_weight_hidden 150.0"
 OPTS+=" --ce_weight 0.5"
 
 

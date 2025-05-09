@@ -123,15 +123,15 @@ OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
  
-OPTS+=" --hidden-dim-student 2048"
+OPTS+=" --hidden-dim-student 1600"
 OPTS+=" --hidden-dim-teacher 4096"
 OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
-OPTS+=" --proj_dim 2048"
+OPTS+=" --proj_dim 1600"
 OPTS+=" --top_k_vocab 500"
-OPTS+=" --ot_weight_logits 100.0"  
-OPTS+=" --ot_weight_hidden 100.0"
-OPTS+=" --ce_weight 0.5"
+OPTS+=" --ot_weight_logits 0.0"  
+OPTS+=" --ot_weight_hidden 0.0"
+OPTS+=" --ce_weight 2.0"
 
 
 # seed

@@ -120,7 +120,7 @@ def finetune(
     ## Add
     ## gradient_accumulation_steps=4, update_interval=50, 
     ## ==> update after 50×4=200 minibatches
-    update_interval = 50
+    update_interval = 150
     step_since_last_update = 0
     cost_values_logits_buffer = []
     cost_values_hidden_buffer = []

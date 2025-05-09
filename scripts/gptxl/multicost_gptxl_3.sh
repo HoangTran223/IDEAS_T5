@@ -37,7 +37,7 @@ LR=0.0005
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=15
-KD_RATE=5.0
+KD_RATE=0.7
 KD_TEMP=3.0
 LORA_RANK=256
 LORA_ALPHA=8
@@ -46,11 +46,11 @@ LORA_DROPOUT=0.1
 MAX_LENGTH=512
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.001
+PROJECTOR_LR=0.0005
 # runtime
 PRECISION="bf16"
 CRITERION="dual_space_kd_with_cma_ot"
-KD_OBJ="reverse_kl"  # [reverse_kl, adaptive_kl]
+KD_OBJ="forward_kl"  # [reverse_kl, adaptive_kl]
 
 CONFIG="${KD_OBJ}-lora-rank=${LORA_RANK}-alpha=${LORA_ALPHA}-dropout=${LORA_DROPOUT}-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_TYPE}__kd^rate=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
@@ -121,15 +121,15 @@ OPTS+=" --save-dir ${SAVE_PATH}"
 OPTS+=" --keep-best-n-checkpoints ${SAVE_BEST_N_CKPTS}"
 OPTS+=" --criterion ${CRITERION}"
 
-OPTS+=" --hidden-dim-student 2048"
+OPTS+=" --hidden-dim-student 1600"
 OPTS+=" --hidden-dim-teacher 4096"
 OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
-OPTS+=" --proj_dim 2048"
+OPTS+=" --proj_dim 1600"
 OPTS+=" --top_k_vocab 500"
-OPTS+=" --ot_weight_logits 100.0"  
-OPTS+=" --ot_weight_hidden 100.0"
-OPTS+=" --ce_weight 0.5"
+OPTS+=" --ot_weight_logits 0.0"  
+OPTS+=" --ot_weight_hidden 0.0"
+OPTS+=" --ce_weight 0.3"
 
 
 # seed
