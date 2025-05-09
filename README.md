@@ -4,8 +4,6 @@
 
 - Install all dependencies from requirements.txt
 
-- Need Deepspeed>= 0.14.0 (Repo github đã có thư mục DeepSpeed rồi, nên không cần tải thư viện này)
-
 
 # Training
 
