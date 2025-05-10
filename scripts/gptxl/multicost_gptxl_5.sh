@@ -33,7 +33,7 @@ DATA_DIR="${BASE_PATH}/data/dolly/"
 # task
 TASK="dual_space_kd_with_cma_ot"
 BATCH_SIZE=16
-LR=0.0005
+LR=0.001
 GRAD_ACC=2
 EVAL_BATCH_SIZE=16
 EPOCH=15
@@ -46,7 +46,7 @@ LORA_DROPOUT=0.1
 MAX_LENGTH=512
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.0005
+PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
 CRITERION="dual_space_kd_with_cma_ot"
@@ -127,9 +127,9 @@ OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 1600"
 OPTS+=" --top_k_vocab 500"
-OPTS+=" --ot_weight_logits 0.02"  
-OPTS+=" --ot_weight_hidden 0.02"
-OPTS+=" --ce_weight 0.3"
+OPTS+=" --ot_weight_logits 1.0"  
+OPTS+=" --ot_weight_hidden 0.0"
+OPTS+=" --ce_weight 0.5"
 
 
 # seed

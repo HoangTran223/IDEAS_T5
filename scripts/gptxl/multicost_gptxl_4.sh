@@ -46,7 +46,7 @@ LORA_DROPOUT=0.1
 MAX_LENGTH=512
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.0005
+PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
 CRITERION="dual_space_kd_with_cma_ot"
