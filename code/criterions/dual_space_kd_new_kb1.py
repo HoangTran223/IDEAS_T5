@@ -14,7 +14,7 @@ import torch.distributed as dist
 class DualSpaceKDWithCMA_OT_1(VariousDivergence):
     def __init__(self, args, padding_id=-100):
         super().__init__(args, padding_id=padding_id)
-        print("--------------------Using KB Su dung Multi-OT-Ablation-1-------------------")
+        print("--------------------Using KB Su dung Multi-OT-NoUpdate-------------------")
         self.args = args
         
         if torch.cuda.is_available() and args.precision == "bf16":
@@ -34,7 +34,7 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
         self.ot_weight_hidden = args.ot_weight_hidden
         self.ce_ = args.ce_weight
         self.kd_rate = args.kd_rate
-        self.tau_seq = 1.7
+        self.tau_seq = 2.0
         self.top_k_vocab = args.top_k_vocab
         self.total_steps = args.total_iters
         self.current_step = 0
@@ -46,8 +46,10 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
         self.salience_proj_s = nn.Linear(d_s, 1, bias=True).to(self.device, dtype=self.dtype)
 
         self.etp = ETP()
-        self.cost_weights_hidden = nn.Parameter(torch.tensor([0.3, 0.5, 0.2], dtype=self.dtype, device=self.device))
+        self.cost_weights_logits = nn.Parameter(torch.tensor([0.33, 0.33, 0.34], dtype=self.dtype, device=self.device))
+        self.cost_weights_hidden = nn.Parameter(torch.tensor([0.33, 0.33, 0.34], dtype=self.dtype, device=self.device))
 
+        print(f"ot_weight_logits: {self.ot_weight_logits}")
         print(f"ot_weight_hidden: {self.ot_weight_hidden}")
         print(f"kd_rate: {self.kd_rate}")
         print(f"ce_: {self.ce_}")
@@ -98,8 +100,8 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
         pad_mask = input_data["attention_mask"].bool()
         teacher_pad_mask = input_data[f"teacher_{distiller.teacher_model_type}_attention_mask"].bool()
 
-        # ot_loss_logits, log = self.compute_ot_logits(distiller, outputs.logits, teacher_outputs.logits, 
-        #                                 pad_mask, teacher_pad_mask, outputs.hidden_states[-1], teacher_outputs.hidden_states[-1], log)
+        ot_loss_logits, log = self.compute_ot_logits(distiller, outputs.logits, teacher_outputs.logits, 
+                                        pad_mask, teacher_pad_mask, outputs.hidden_states[-1], teacher_outputs.hidden_states[-1], log)
         ot_loss_hidden, log = self.compute_ot_hidden(distiller, outputs.hidden_states[-1], teacher_outputs.hidden_states[-1], 
                                         pad_mask, teacher_pad_mask, log)
         
@@ -108,9 +110,9 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
         )
         log["kd_loss"] = kd_loss
 
-        total_loss = self.ce_ * loss_ce + self.kd_rate * kd_loss  + self.ot_weight_hidden * ot_loss_hidden
+        total_loss = self.ce_ * loss_ce + self.kd_rate * kd_loss + self.ot_weight_logits * ot_loss_logits + self.ot_weight_hidden * ot_loss_hidden
         log["loss"] = total_loss
-        # log["ot_loss_logits"] = ot_loss_logits
+        log["ot_loss_logits"] = ot_loss_logits
         log["ot_loss_hidden"] = ot_loss_hidden
 
         accuracy = self.compute_token_accuracy(
@@ -124,16 +126,16 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
         return total_loss / batch_denom, logging_output
         
 
-    # def compute_ot_logits(self, distiller, student_logits, teacher_logits, student_mask, teacher_mask, student_outputs, teacher_outputs, log, t_start=0.1, t_end=1.0):
-    #     batch_size = student_logits.size(0)
-    #     tau = self.tau_seq
-    #     eps = 1e-7
-    #     k = self.top_k_vocab
+    def compute_ot_logits(self, distiller, student_logits, teacher_logits, student_mask, teacher_mask, student_outputs, teacher_outputs, log, t_start=0.1, t_end=1.0):
+        batch_size = student_logits.size(0)
+        tau = self.tau_seq
+        eps = 1e-7
+        k = self.top_k_vocab
 
-    #     def normalize(value):
-    #         means = value.mean(dim=-1, keepdim=True)
-    #         stds = value.std(dim=-1, keepdim=True)
-    #         return value / (stds + 0.0001)
+        def normalize(value):
+            means = value.mean(dim=-1, keepdim=True)
+            stds = value.std(dim=-1, keepdim=True)
+            return value / (stds + 0.0001)
 
         # student_logits = normalize(student_logits).to(self.dtype)
         # teacher_logits = normalize(teacher_logits).to(self.dtype)
@@ -173,56 +175,56 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
         # student_probs = improved_sort(student_probs)
         # interpolated_teacher_probs = improved_sort(interpolated_teacher_probs)
         # Step 2: Sort each logit vector and take top-k (per token position)
-        # student_topk_logits, _ = student_logits.sort(dim=-1, descending=True)
-        # teacher_topk_logits, _ = teacher_logits.sort(dim=-1, descending=True)
+        student_topk_logits, _ = student_logits.sort(dim=-1, descending=True)
+        teacher_topk_logits, _ = teacher_logits.sort(dim=-1, descending=True)
 
-        # student_topk_logits = student_topk_logits[..., :k]
-        # teacher_topk_logits = teacher_topk_logits[..., :k]
+        student_topk_logits = student_topk_logits[..., :k]
+        teacher_topk_logits = teacher_topk_logits[..., :k]
 
-        # # Step 3: Interpolate teacher logits
-        # frac = min(self.current_step / self.total_steps, 1.0)
-        # t = t_start + (t_end - t_start) * frac
-        # interpolated_teacher_logits = (1 - t) * student_topk_logits + t * teacher_topk_logits
+        # Step 3: Interpolate teacher logits
+        frac = min(self.current_step / self.total_steps, 1.0)
+        t = t_start + (t_end - t_start) * frac
+        interpolated_teacher_logits = (1 - t) * student_topk_logits + t * teacher_topk_logits
 
-        # # Step 4: Apply softmax with temperature
-        # student_probs = F.softmax(student_topk_logits / tau, dim=-1)
-        # interpolated_teacher_probs = F.softmax(interpolated_teacher_logits / tau, dim=-1)
+        # Step 4: Apply softmax with temperature
+        student_probs = F.softmax(student_topk_logits / tau, dim=-1)
+        interpolated_teacher_probs = F.softmax(interpolated_teacher_logits / tau, dim=-1)
 
-        # total_loss = 0
-        # for b in range(batch_size):
-        #     mask_s = student_mask[b].bool()
-        #     mask_t = teacher_mask[b].bool()
-        #     sp = student_probs[b][mask_s]  # (N, k)
-        #     tp = interpolated_teacher_probs[b][mask_t]  # (M, k)
+        total_loss = 0
+        for b in range(batch_size):
+            mask_s = student_mask[b].bool()
+            mask_t = teacher_mask[b].bool()
+            sp = student_probs[b][mask_s]  # (N, k)
+            tp = interpolated_teacher_probs[b][mask_t]  # (M, k)
 
-        #     C2 = torch.cdist(tp, sp, p=2)  # (M, N)
+            C2 = torch.cdist(tp, sp, p=2)  # (M, N)
 
-        #     log_ratio = torch.log(tp.unsqueeze(1) / (sp.unsqueeze(0) + eps))  # (M, N, k)
-        #     C4 = (tp.unsqueeze(1) * log_ratio).sum(dim=-1)  # (M, N)
+            log_ratio = torch.log(tp.unsqueeze(1) / (sp.unsqueeze(0) + eps))  # (M, N, k)
+            C4 = (tp.unsqueeze(1) * log_ratio).sum(dim=-1)  # (M, N)
 
-        #     student_seq = student_outputs[b][mask_s]  # (N, hidden_dim)
-        #     teacher_seq = distiller.projectors["ot"](teacher_outputs[b])[mask_t]  # (M, hidden_dim)
-        #     sal_s = torch.sigmoid(self.salience_proj_s(student_seq.to(self.dtype))).squeeze(-1)
-        #     sal_t = torch.sigmoid(self.salience_proj_s(teacher_seq.to(self.dtype))).squeeze(-1)  # (M,)
-        #     C_salience = torch.abs(sal_t.unsqueeze(1) - sal_s.unsqueeze(0))  # (M, N)
+            student_seq = student_outputs[b][mask_s]  # (N, hidden_dim)
+            teacher_seq = distiller.projectors["ot"](teacher_outputs[b])[mask_t]  # (M, hidden_dim)
+            sal_s = torch.sigmoid(self.salience_proj_s(student_seq.to(self.dtype))).squeeze(-1)
+            sal_t = torch.sigmoid(self.salience_proj_s(teacher_seq.to(self.dtype))).squeeze(-1)  # (M,)
+            C_salience = torch.abs(sal_t.unsqueeze(1) - sal_s.unsqueeze(0))  # (M, N)
 
-        #     cost_matrices = [C2, C4, C_salience]
-        #     for i, C in enumerate(cost_matrices):
-        #         if C.shape != cost_matrices[0].shape:
-        #             raise ValueError(f"Cost matrix {i} has shape {C.shape}, expected {cost_matrices[0].shape}")
-        #     weights = self.cost_weights_logits
-        #     log["avg_c2_logits"] = C2.mean().item()
-        #     log["avg_c4_logits"] = C4.mean().item()
-        #     log["avg_c_salience_logits"] = C_salience.mean().item()
+            cost_matrices = [C2, C4, C_salience]
+            for i, C in enumerate(cost_matrices):
+                if C.shape != cost_matrices[0].shape:
+                    raise ValueError(f"Cost matrix {i} has shape {C.shape}, expected {cost_matrices[0].shape}")
+            weights = self.cost_weights_logits
+            log["avg_c2_logits"] = C2.mean().item()
+            log["avg_c4_logits"] = C4.mean().item()
+            log["avg_c_salience_logits"] = C_salience.mean().item()
 
-        #     total_cost = sum(w * C for w, C in zip(weights, cost_matrices))
-        #     total_cost = total_cost.to(dtype=self.dtype)
-        #     loss_etp, _ = self.etp(total_cost)
-        #     total_loss += loss_etp
+            total_cost = sum(w * C for w, C in zip(weights, cost_matrices))
+            total_cost = total_cost.to(dtype=self.dtype)
+            loss_etp, _ = self.etp(total_cost)
+            total_loss += loss_etp
 
-        # loss = total_loss * self.ot_weight_logits / batch_size
-        # log["ot_loss_logits"] = loss.item()
-        # return loss, log
+        loss = total_loss * self.ot_weight_logits / batch_size
+        log["ot_loss_logits"] = loss.item()
+        return loss, log
 
     def compute_ot_hidden(self, distiller, student_outputs, teacher_outputs, attention_mask_student, attention_mask_teacher, log):
         teacher_outputs = distiller.projectors["ot"](teacher_outputs)
@@ -402,7 +404,7 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
         return loss, log
 
     
-    def update_cost_weights(self, cost_values_hidden):
+    def update_cost_weights(self, cost_values_logits, cost_values_hidden):
         def to_scalar_list(values):
             if isinstance(values, torch.Tensor):
                 values = values.tolist()
@@ -423,9 +425,33 @@ class DualSpaceKDWithCMA_OT_1(VariousDivergence):
             except (TypeError, ValueError) as e:
                 logger.error(f"Error converting to float: {e}, values: {values}")
                 return None
+        
+        cost_values_logits = to_scalar_list(cost_values_logits)
+        cost_values_logits = torch.tensor(cost_values_logits, dtype=self.dtype, device=self.device)
 
         cost_values_hidden = to_scalar_list(cost_values_hidden)
         cost_values_hidden = torch.tensor(cost_values_hidden, dtype=self.dtype, device=self.device)
+        
+        ###
+        c_vals_logits = cost_values_logits.detach().cpu().float().numpy()
+        n_logits = len(c_vals_logits)  
+        sigma = self.sigma
+        
+        alpha_logits = cp.Variable(n_logits)
+        objective_logits = cp.Minimize(c_vals_logits @ alpha_logits + sigma * cp.sum_squares(alpha_logits - 1/n_logits))
+        constraints_logits = [cp.sum(alpha_logits) == 1, alpha_logits >= 0.01]
+        
+        problem_logits = cp.Problem(objective_logits, constraints_logits)
+        problem_logits.solve(solver=cp.ECOS, verbose=False)
+        
+        if alpha_logits.value is None:
+            print(f"Rank {dist.get_rank()}: CVXPY solver failed for cost_weights_logits. Skipping update.")
+        else:
+            new_weights_logits = torch.tensor(alpha_logits.value, dtype=self.cost_weights_logits.dtype, device=self.cost_weights_logits.device)
+            with torch.no_grad():
+                self.cost_weights_logits.copy_(new_weights_logits)
+            alpha_str_logits = ", ".join([f"{w:.6f}" for w in new_weights_logits.tolist()])
+            print(alpha_str_logits)
         
         ###
         c_vals_hidden = cost_values_hidden.detach().cpu().float().numpy()
