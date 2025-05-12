@@ -674,4 +674,3 @@ def pairwise_attention_distance(x, y, eps=1e-8):
     dist_mt = 1.0 - attention_weights
     return dist_mt
 
-

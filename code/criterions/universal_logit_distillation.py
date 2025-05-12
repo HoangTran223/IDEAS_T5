@@ -6,6 +6,8 @@ class UniversalLogitDistillation(CrossEntropyLoss):
     def __init__(self, args, padding_id=-100) -> None:
         super().__init__(args, padding_id=padding_id)
         self.kd_rate = args.kd_rate
+
+        print(f"Using original ULD----------------------------------")
     
     def forward(
         self, 

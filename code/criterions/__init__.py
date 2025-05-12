@@ -7,7 +7,10 @@ from .universal_logit_distillation import UniversalLogitDistillation
 from .min_edit_dis_kld import MinEditDisForwardKLD
 from .dual_space_kd_new_kb1 import DualSpaceKDWithCMA_OT_1
 from .dual_space_kd_new_kb2 import DualSpaceKDWithCMA_OT_2
-from .dual_space_kd_new_kb3 import DualSpaceKDWithCMA_OT_3
+from .ULD_1 import UniversalLogitDistillation_1
+from .MinED_1 import MinEditDisForwardKLD_1
+from .MultiLevelOT import MultiLevelOT
+from .MultiLevelOT_1 import MultiLevelOT_1
 
 criterion_list = {
     "cross_entropy": CrossEntropyLoss,
@@ -19,7 +22,10 @@ criterion_list = {
     "dual_space_kd_with_cma_ot": DualSpaceKDWithCMA_OT,
     "dual_space_kd_with_cma_ot_kb1": DualSpaceKDWithCMA_OT_1,
     "dual_space_kd_with_cma_ot_kb2": DualSpaceKDWithCMA_OT_2,
-    "dual_space_kd_with_cma_ot_kb3": DualSpaceKDWithCMA_OT_3,
+    "uld_1": UniversalLogitDistillation_1,
+    "mined_1": MinEditDisForwardKLD_1,
+    "MultiLevelOT": MultiLevelOT,
+    "MultiLevelOT_1": MultiLevelOT_1
 }
 
 def build_criterion(args):

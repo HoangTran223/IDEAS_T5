@@ -110,23 +110,25 @@ class CrossEntropyLoss(nn.Module):
     #         else:
     #             logging_output[k] = [record_v]
     #     return logging_output
+
+
     def record_logging_output(self, logging_output, batch_denom, content):
         for k, v in content.items():
-            # nếu v đã là tensor, dùng luôn; còn float/int thì wrap thành tensor
+            # print(f"Rank {dist.get_rank()}: Processing key: {k}, value: {v}")
             if isinstance(v, torch.Tensor):
                 rec = v.clone()
             else:
                 rec = torch.tensor(v, device=self.device)
 
-            # với avg_c* thì không chia batch_denom
+            if k in ["cost_values_last", "cost_values_first"]:
+                # print(f"Rank {dist.get_rank()}: Storing {k}: {rec.tolist()}")
+                logging_output.setdefault(k, []).append(rec.tolist())
+                continue
+
             if not k.startswith("avg_c"):
                 rec = rec / batch_denom
 
-            # đồng bộ qua tất cả GPU
             dist.all_reduce(rec, dist.ReduceOp.SUM)
-
-            # đưa về scalar và chia world_size
             val = rec.item() / dist.get_world_size()
-
             logging_output.setdefault(k, []).append(val)
         return logging_output

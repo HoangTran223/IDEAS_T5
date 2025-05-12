@@ -19,7 +19,7 @@ from rouge_metric import compute_metrics
 
 torch.set_num_threads(4)
 
-
+## Add 
 def prepare_dataset_main(args, tokenizer):
     data = {}
     data["test"] = PromptDataset(
@@ -92,6 +92,11 @@ def run_model(args, tokenizer, model, dataset: PromptDataset, epoch, device):
 
             all_ids = torch.cat([model_batch["input_ids"], no_model_batch["rest_ids"]], dim=-1)
             input_ids = all_ids[:, :-1]
+
+            # Add
+            if tokenizer.pad_token_id is None or isinstance(tokenizer.pad_token_id, bool):
+                tokenizer.pad_token_id = tokenizer.eos_token_id
+
             attention_mask = (input_ids != tokenizer.pad_token_id).long()
             label_ids = all_ids[:, 1:]
             label_ids = torch.masked_fill(label_ids, label_ids == tokenizer.pad_token_id, -100)

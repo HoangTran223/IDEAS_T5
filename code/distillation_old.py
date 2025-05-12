@@ -9,7 +9,6 @@ from torch.optim import AdamW
 import deepspeed
 import shutil
 import json
-import numpy as np
 from tqdm import tqdm
 import math
 from transformers import (
@@ -116,14 +115,16 @@ def finetune(
     }
     model_list = []
 
-
-    ## Add
-    ## gradient_accumulation_steps=4, update_interval=50, 
-    ## ==> update after 50×4=200 minibatches
-    update_interval = 50
-    step_since_last_update = 0
-    cost_values_logits_buffer = []
-    cost_values_hidden_buffer = []
+    # log_rank("Evaluate model before training...")
+    # eval_loss, eval_results = evaluate(
+    #     args, 
+    #     tokenizer, 
+    #     model.module.student_model, 
+    #     dataset["dev"], 
+    #     "dev", 
+    #     device,
+    #     repeat_times=1
+    # )
 
     for epoch in range(args.num_epochs):
         sampler.set_epoch(epoch)
@@ -131,13 +132,12 @@ def finetune(
         log_rank("Start iterations of epoch {}".format(epoch + 1))
         model.train()
         end_epoch = False
-
         epoch_step = 0
         epoch_loss, epoch_nll_loss, epoch_kd_loss = 0.0, 0.0, 0.0
         train_iter = iter(train_dataloader)
-        global_step = 0
 
         while True:
+            # collect #gas batches first to calculate global batch size for token-level loss
             global_batch = []
             global_st_time = time.time()
             for i in range(args.gradient_accumulation_steps):
@@ -156,6 +156,7 @@ def finetune(
             if end_epoch:
                 break
 
+            # get the true batch token num according to the whole batch (all_tok_num / (grad_acc * n_gpu))
             global_token_num = sum(
                 batch["output_batch"]["label"].ne(-100).sum() for batch in global_batch)
             dist.all_reduce(global_token_num, dist.ReduceOp.SUM, group=dp_group)
@@ -163,77 +164,16 @@ def finetune(
 
             for batch in global_batch:
                 st_time = time.time()
-                # loss, logging_output = model(criterion, batch, logging_output, loss_denom)
-                loss, batch_logging_output = model(criterion, batch, logging_output, loss_denom)
-                
+                loss, logging_output = model(
+                    criterion, batch, logging_output, loss_denom)
                 model.backward(loss)
                 model.step()
 
                 torch.cuda.synchronize()
                 elapsed_time = time.time() - st_time
                 logging_output["micro_step_time"].append(elapsed_time)
-
-                # Add
-                required_logits_keys = ["avg_c2_logits", "avg_c4_logits","avg_c_salience_logits"]
-                required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last", "avg_c7_last"]
-
-                if all(k in batch_logging_output for k in required_logits_keys + required_hidden_keys):
-                    def to_scalar(value):
-                        if isinstance(value, (int, float)):
-                            return float(value)
-                        elif isinstance(value, (list, tuple)):
-                            return float(np.mean(value))
-                        elif isinstance(value, torch.Tensor):
-                            return float(value.mean().item())
-                        else:
-                            raise ValueError(f"Invalid type for value: {type(value)}, value: {value}")
-                    try:
-
-                        cost_values_logits = [
-                            # to_scalar(batch_logging_output["avg_c1_last"]),
-                            to_scalar(batch_logging_output["avg_c2_logits"]),
-                            to_scalar(batch_logging_output["avg_c4_logits"]),
-                            to_scalar(batch_logging_output["avg_c_salience_logits"])
-                        ]
-                        cost_values_hidden = [
-                            to_scalar(batch_logging_output["avg_c2_last"]),
-                            to_scalar(batch_logging_output["avg_c5_last"]),
-                            to_scalar(batch_logging_output["avg_c6_last"]),
-                            to_scalar(batch_logging_output["avg_c7_last"])
-                        ]
-                    except ValueError as e:
-                        logger.error(f"Failed to convert logging_output to scalar: {e}, values: {batch_logging_output}")
-                        continue
-                    cost_values_logits_buffer.append(cost_values_logits)
-                    cost_values_hidden_buffer.append(cost_values_hidden)
-                else:
-                    print(f"Missing keys in batch_logging_output: {list(batch_logging_output.keys())}")
                 step += 1
 
-            step_since_last_update += 1
-            if hasattr(criterion, "update_cost_weights") and step_since_last_update >= update_interval:
-                print(f"[DEBUG] Updating cost weights at global_step {global_step}")
-                if cost_values_logits_buffer and cost_values_hidden_buffer:
-                    expected_buffer_size = update_interval * args.gradient_accumulation_steps
-                    if len(cost_values_logits_buffer) != expected_buffer_size:
-                        print(f"Unexpected cost_values_logits_buffer size: {len(cost_values_logits_buffer)}, expected {expected_buffer_size}")
-                        cost_values_logits_buffer = []
-                        cost_values_hidden_buffer = []
-                        continue
-
-                    cost_values_logits = torch.tensor(cost_values_logits_buffer).mean(dim=0)
-                    cost_values_hidden = torch.tensor(cost_values_hidden_buffer).mean(dim=0)
-
-                    criterion.update_cost_weights(
-                            cost_values_logits=cost_values_logits.tolist(),
-                            cost_values_hidden=cost_values_hidden.tolist()
-                        )
-                    cost_values_logits_buffer = []
-                    cost_values_hidden_buffer = []
-
-                step_since_last_update = 0
-            
-            global_step += 1
             logging_output["global_step"] += 1
             logging_output["step_time"].append(time.time() - global_st_time)
             epoch_step += 1
@@ -585,9 +525,6 @@ def main():
     ds_config["train_micro_batch_size_per_gpu"] = args.batch_size
     ds_config["gradient_clipping"] = args.clip_grad
     ds_config["steps_per_print"] = 10000000
-    ds_config["offload_param_device"] = None
-    ds_config["zero3_init_flag"] = False
-    print('New')
     
     if not args.do_train:
         ds_config["zero_optimization"]["stage"] = 0
@@ -596,7 +533,6 @@ def main():
     if "bf16" in ds_config:
         args.fp32 = not ds_config["bf16"]["enabled"]
     log_rank(args)
-
     args.deepspeed_config = None
     
     # prepare for deepspeed ZeRO-3
@@ -607,8 +543,8 @@ def main():
     
     log_rank("Initializing a distiller for knowledge distillation...")
     distiller = Distiller(args, device)
-
     dataset = prepare_dataset(args, distiller)
+    
     dp_world_size = dist.get_world_size()
     
     if args.do_train:
@@ -635,13 +571,6 @@ def main():
     optimizer = distiller.add_optimizer_param_group(optimizer)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
 
-    ## Add
-    print("Student model dtype:", next(distiller.student_model.parameters()).dtype)
-    print("Distiller dtype:", next(distiller.parameters()).dtype)
-    print(">>> Using ds config:", args.deepspeed_config)
-    print("Model device:", next(distiller.parameters()).device)
-
-
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=distiller,
         optimizer=optimizer,
@@ -650,32 +579,8 @@ def main():
         mpu=None,
         config_params=ds_config
     )
-
-    # Add
-    if args.load is not None:
-        log_rank(f"[INFO] Loading checkpoint from {args.load}")
-        
-        # Load student model + tokenizer
-        distiller.student_model = distiller.student_model.from_pretrained(args.load).to(device)
-        distiller.student_tokenizer = distiller.student_tokenizer.from_pretrained(args.load)
-        
-        # Load projector
-        projector_path = os.path.join(args.load, "projector.pt")
-        if os.path.exists(projector_path) and hasattr(model.module, "projectors"):
-            log_rank("[INFO] Loading projector weights...")
-            map_location = device if isinstance(device, torch.device) else torch.device(f"cuda:{device}")
-            projector_weights = torch.load(projector_path, map_location=map_location)
-            model.module.projectors.load_state_dict(projector_weights)
-
-        # DeepSpeed checkpoint loading
-        # checkpoint_dir = args.load
-        # ckpt_loaded = model.load_checkpoint(checkpoint_dir)
-        # if ckpt_loaded is False:
-        #     log_rank(f"[WARN] Could not load full DeepSpeed checkpoint from {checkpoint_dir}")
-
-
+    
     if args.do_train:
-        
         finetune(args, distiller.student_tokenizer, model, optimizer, lr_scheduler, dataset, device)
    
     if args.do_eval:
