@@ -127,8 +127,8 @@ OPTS+=" --max-student-len 512"
 OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 2048"
 OPTS+=" --top_k_vocab 500"
-OPTS+=" --ot_weight_logits 0.0"  
-OPTS+=" --ot_weight_hidden 0.0"
+OPTS+=" --ot_weight_logits 100.0"  
+OPTS+=" --ot_weight_hidden 100.0"
 OPTS+=" --ce_weight 0.5"
 
 
@@ -154,7 +154,7 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/code/distillation_kb1.py ${OPTS}"
 
 ${CMD} \
 >> ${SAVE_PATH}/train.log 2>&1 &

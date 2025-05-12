@@ -129,8 +129,8 @@ OPTS+=" --max-teacher-len 512"
 OPTS+=" --proj_dim 2048"
 OPTS+=" --top_k_vocab 500"
 OPTS+=" --ot_weight_logits 100.0"  
-OPTS+=" --ot_weight_hidden 100.0"
-OPTS+=" --ce_weight 0.3"
+OPTS+=" --ot_weight_hidden 0.0"
+OPTS+=" --ce_weight 0.5"
 
 
 # seed

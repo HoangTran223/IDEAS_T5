@@ -120,8 +120,9 @@ def finetune(
     ## Add
     ## gradient_accumulation_steps=4, update_interval=50, 
     ## ==> update after 50×4=200 minibatches
-    update_interval = 50
+    update_interval = 1000
     step_since_last_update = 0
+    cost_values_logits_buffer = []
     cost_values_hidden_buffer = []
 
     for epoch in range(args.num_epochs):
@@ -171,50 +172,6 @@ def finetune(
                 torch.cuda.synchronize()
                 elapsed_time = time.time() - st_time
                 logging_output["micro_step_time"].append(elapsed_time)
-
-                # Add
-                # required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last", "avg_c7_last"]
-                required_hidden_keys = ["avg_c2_last", "avg_c5_last", "avg_c6_last"]
-
-                if all(k in batch_logging_output for k in required_hidden_keys):
-                    def to_scalar(value):
-                        if isinstance(value, (int, float)):
-                            return float(value)
-                        elif isinstance(value, (list, tuple)):
-                            return float(np.mean(value))
-                        elif isinstance(value, torch.Tensor):
-                            return float(value.mean().item())
-                        else:
-                            raise ValueError(f"Invalid type for value: {type(value)}, value: {value}")
-                    try:
-                        cost_values_hidden = [
-                            to_scalar(batch_logging_output["avg_c2_last"]),
-                            to_scalar(batch_logging_output["avg_c5_last"]),
-                            to_scalar(batch_logging_output["avg_c6_last"])
-                            # to_scalar(batch_logging_output["avg_c7_last"])
-                        ]
-                    except ValueError as e:
-                        logger.error(f"Failed to convert logging_output to scalar: {e}, values: {batch_logging_output}")
-                        continue
-                    cost_values_hidden_buffer.append(cost_values_hidden)
-                else:
-                    print(f"Missing keys in batch_logging_output: {list(batch_logging_output.keys())}")
-                step += 1
-
-            step_since_last_update += 1
-            if hasattr(criterion, "update_cost_weights") and step_since_last_update >= update_interval:
-                print(f"[DEBUG] Updating cost weights at global_step {global_step}")
-                if cost_values_hidden_buffer:
-                    expected_buffer_size = update_interval * args.gradient_accumulation_steps
-
-                    cost_values_hidden = torch.tensor(cost_values_hidden_buffer).mean(dim=0)
-
-                    criterion.update_cost_weights(
-                            cost_values_hidden=cost_values_hidden.tolist()
-                        )
-                    cost_values_hidden_buffer = []
-
-                step_since_last_update = 0
             
             global_step += 1
             logging_output["global_step"] += 1
